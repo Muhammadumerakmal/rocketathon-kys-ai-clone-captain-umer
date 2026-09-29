@@ -1,6 +1,6 @@
 import "server-only";
 import type { DuelRound, Memory, MemoryRevision, Prediction, ResolveRevisionRequest } from "@/contracts";
-import { duelRound, memories, revision } from "./fixtures";
+import { memories, revision } from "./fixtures";
 
 export interface MockResolution {
   predictionId: string;
@@ -33,7 +33,7 @@ export function mockState(): MockState {
     answers: new Map(),
     memories: memories.map((m) => (m.id === revision.oldMemory.id ? { ...m, validTo: null, supersededBy: null } : { ...m })),
     revisions: [revision],
-    duelRounds: [duelRound],
+    duelRounds: [],
     predictions: [],
     resolutions: [],
   };
