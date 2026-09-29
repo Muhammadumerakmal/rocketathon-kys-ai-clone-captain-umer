@@ -1,20 +1,13 @@
-import { cva, type VariantProps } from "class-variance-authority";
 import type { ComponentProps } from "react";
 import { cn } from "@/lib/utils";
+import { chipVariants } from "./chip-variants";
 
-const badgeVariants = cva("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium", {
-  variants: {
-    tone: {
-      neutral: "bg-surface-2 text-muted",
-      twin: "bg-twin/15 text-twin",
-      success: "bg-success/15 text-success",
-      warning: "bg-warning/20 text-foreground",
-      danger: "bg-danger/15 text-danger",
-    },
-  },
-  defaultVariants: { tone: "neutral" },
-});
+/**
+ * Legacy name kept for existing screens; maps old tones onto Chip's colour-rule tones.
+ * New code should use <Chip>.
+ */
+const TONE = { neutral: "neutral", twin: "twin", success: "ok", warning: "warn", danger: "bad" } as const;
 
-export function Badge({ className, tone, ...props }: ComponentProps<"span"> & VariantProps<typeof badgeVariants>) {
-  return <span className={cn(badgeVariants({ tone }), className)} {...props} />;
+export function Badge({ className, tone = "neutral", ...props }: ComponentProps<"span"> & { tone?: keyof typeof TONE }) {
+  return <span className={cn(chipVariants({ tone: TONE[tone] }), "text-xs", className)} {...props} />;
 }

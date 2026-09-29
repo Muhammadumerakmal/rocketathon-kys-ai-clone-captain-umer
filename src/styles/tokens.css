@@ -1,0 +1,109 @@
+/*
+ * TwinOS design tokens — single source of truth (UI/UX plan §2).
+ * Colour semantics are a PRODUCT RULE: ink = you, rose = your twin, champagne = a stranger.
+ * Never use rose or champagne for anything else.
+ *
+ * Theme: light by default; dark via prefers-color-scheme, overridable with
+ * <html data-theme="light|dark"> (set server-side from a cookie → no flash).
+ */
+
+:root {
+  --paper: #f4f3f6;
+  --paper-2: #ebeaf0;
+  --surface: #ffffff;
+  --ink: #141b3d;
+  --ink-2: #4a4f6e;
+  --ink-3: #696c89; /* plan: #8A8DA6 (≈3:1) — darkened to pass AA 4.5:1 on paper; see tests/unit/contrast.test.ts */
+  --line: #e3e2e9;
+  --twin: #f1dee4;
+  --twin-ink: #9b4462;
+  --stranger: #f0e7d3;
+  --stranger-ink: #7a6230;
+  --ok: #2f6e5a;
+  --ok-bg: #ddeee7;
+  --bad: #9e3b35;
+  --bad-bg: #f5e1de;
+  --warn: #8a5a00;
+  --warn-bg: #f7ead2;
+  --chart-twin: #c2457a; /* chart series, dataviz-validated (CVD + contrast) */
+  --chart-stranger: #a88312;
+  --lens-a: #f2d2dc;
+  --lens-b: #eed9b6;
+  --shadow: 0 1px 2px rgb(20 27 61 / 0.06), 0 8px 24px -8px rgb(20 27 61 / 0.14);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0a0e22;
+    --paper-2: #151b38;
+    --surface: #121833;
+    --ink: #eceaf3;
+    --ink-2: #b3b3cb;
+    --ink-3: #8f92b0;
+    --line: #232a4a;
+    --twin: #39202f;
+    --twin-ink: #e8a9be;
+    --stranger: #33291a;
+    --stranger-ink: #e2c68c;
+    --ok: #86d1b5;
+    --ok-bg: #12352b;
+    --bad: #efa39c;
+    --bad-bg: #3e1d1c;
+    --warn: #f2c071;
+    --warn-bg: #3a2b12;
+    --chart-twin: #d4557f;
+    --chart-stranger: #b08a1c;
+  --lens-a: #7a3a58;
+    --lens-b: #6e5528;
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 32px -8px rgb(0 0 0 / 0.6);
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme="dark"] {
+  --paper: #0a0e22;
+  --paper-2: #151b38;
+  --surface: #121833;
+  --ink: #eceaf3;
+  --ink-2: #b3b3cb;
+  --ink-3: #8f92b0;
+  --line: #232a4a;
+  --twin: #39202f;
+  --twin-ink: #e8a9be;
+  --stranger: #33291a;
+  --stranger-ink: #e2c68c;
+  --ok: #86d1b5;
+  --ok-bg: #12352b;
+  --bad: #efa39c;
+  --bad-bg: #3e1d1c;
+  --warn: #f2c071;
+  --warn-bg: #3a2b12;
+  --chart-twin: #d4557f;
+  --chart-stranger: #b08a1c;
+  --lens-a: #7a3a58;
+  --lens-b: #6e5528;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 32px -8px rgb(0 0 0 / 0.6);
+  color-scheme: dark;
+}
+
+:root {
+  /* shape */
+  --r-sm: 8px;
+  --r-md: 14px;
+  --r-lg: 24px;
+  /* motion (mirrors src/lib/motion/tokens.ts) */
+  --dur-fast: 160ms;
+  --dur-med: 280ms;
+  --dur-slow: 560ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in: cubic-bezier(0.55, 0, 1, 0.45);
+  --spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@supports (transition-timing-function: linear(0, 1)) {
+  :root {
+    /* spring-like overshoot, sampled from springs.bouncy */
+    --spring: linear(0, 0.009, 0.035 2.1%, 0.141, 0.281 6.7%, 0.723 12.9%, 0.938 16.7%, 1.017, 1.077, 1.121, 1.149 24.3%, 1.159, 1.163, 1.161, 1.154 29.9%, 1.129 32.8%, 1.051 39.6%, 1.017 43.1%, 0.991, 0.977 51%, 0.974 53.8%, 0.975 57.1%, 0.997 69.8%, 1.003 76.9%, 1);
+  }
+}

@@ -1,8 +1,8 @@
 import {
   Brain,
-  Gauge,
   GraduationCap,
   Library,
+  LineChart,
   type LucideIcon,
   MessagesSquare,
   NotebookPen,
@@ -15,21 +15,33 @@ export interface NavItem {
   href: string;
   label: string;
   icon: LucideIcon;
-  /** Roadmap phase that ships this page (CAPABILITY_MAP.md). Hidden links avoid 404s. */
-  phase: number;
 }
 
-export const NAV_ITEMS: readonly NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", icon: Gauge, phase: 0 },
-  { href: "/train", label: "Train", icon: GraduationCap, phase: 3 },
-  { href: "/duel", label: "Predict Me", icon: Swords, phase: 7 },
-  { href: "/twin", label: "Twin", icon: MessagesSquare, phase: 5 },
-  { href: "/memories", label: "Memories", icon: Library, phase: 4 },
-  { href: "/decisions", label: "Decisions", icon: NotebookPen, phase: 6 },
-  { href: "/council", label: "Council", icon: Brain, phase: 9 },
-  { href: "/simulator", label: "Simulator", icon: Split, phase: 9 },
-  { href: "/settings/privacy", label: "Settings", icon: Settings, phase: 9 },
+/** The five primary tabs (UI/UX plan §4): bottom bar on phones, left rail on desktop. Order = transition direction. */
+export const TABS: readonly NavItem[] = [
+  { href: "/train", label: "Train", icon: GraduationCap },
+  { href: "/duel", label: "Predict me", icon: Swords },
+  { href: "/twin", label: "Ask", icon: MessagesSquare },
+  { href: "/memories", label: "Memories", icon: Library },
+  { href: "/insights", label: "Insights", icon: LineChart },
 ];
 
-/** Bump as phases land; items above this are shown as "coming soon". */
-export const SHIPPED_PHASE = 9;
+/** Secondary destinations: in the rail on desktop, in the top-bar menu on phones. */
+export const MORE: readonly NavItem[] = [
+  { href: "/decisions", label: "Decisions", icon: NotebookPen },
+  { href: "/council", label: "Council", icon: Brain },
+  { href: "/simulator", label: "Simulator", icon: Split },
+  { href: "/settings/privacy", label: "Settings", icon: Settings },
+];
+
+export function activeTabIndex(pathname: string): number {
+  return TABS.findIndex((t) => pathname === t.href || pathname.startsWith(`${t.href}/`));
+}
+
+/** Direction for the slide transition: forward if the destination tab is to the right. */
+export function directionTo(from: string, to: string): "fwd" | "back" {
+  const a = activeTabIndex(from);
+  const b = activeTabIndex(to);
+  if (a < 0 || b < 0) return "fwd";
+  return b >= a ? "fwd" : "back";
+}

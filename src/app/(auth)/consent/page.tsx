@@ -17,7 +17,7 @@ const POINTS = [
 export default async function ConsentPage() {
   const viewer = await getViewer();
   if (!viewer) redirect("/sign-in");
-  if (viewer.mode === "live" && !viewer.profile.needsConsent) redirect("/dashboard");
+  if (viewer.mode === "live" && !viewer.profile.needsConsent) redirect("/train");
 
   return (
     <main className="mx-auto max-w-xl px-4 py-12">

@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Sign in" };
 
 export default async function SignInPage() {
   await connection(); // the form depends on runtime mode, so never prerender it
-  if (!isMock() && (await getViewer())) redirect("/dashboard");
+  if (!isMock() && (await getViewer())) redirect("/train");
 
   return (
     <main className="mx-auto flex min-h-[70dvh] max-w-md flex-col justify-center px-4 py-12">
@@ -22,7 +22,7 @@ export default async function SignInPage() {
         {isMock() ? (
           <div className="space-y-3">
             <p className="text-sm text-muted">Demo mode is on (no database). You&apos;ll explore as the demo persona Aria.</p>
-            <Link href="/dashboard" className={buttonVariants({ className: "w-full" })}>
+            <Link href="/train" className={buttonVariants({ className: "w-full" })}>
               Continue as Aria
             </Link>
           </div>

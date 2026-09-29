@@ -1,76 +1,176 @@
 @import "tailwindcss";
+@import "../styles/tokens.css";
 
-/*
- * Design tokens. Components use the semantic names (bg-surface, text-muted…),
- * never raw colors, so dark mode is one variable swap.
- */
-:root {
-  --background: oklch(0.985 0.004 265);
-  --surface: oklch(1 0 0);
-  --surface-2: oklch(0.965 0.006 265);
-  --foreground: oklch(0.22 0.02 265);
-  --muted: oklch(0.52 0.02 265);
-  --border: oklch(0.91 0.008 265);
-  --primary: oklch(0.55 0.2 275);
-  --primary-foreground: oklch(0.99 0 0);
-  --accent: oklch(0.72 0.15 175);
-  --twin: oklch(0.55 0.2 275);
-  --stranger: oklch(0.65 0.03 265);
-  --success: oklch(0.62 0.15 150);
-  --warning: oklch(0.75 0.15 75);
-  --danger: oklch(0.6 0.2 25);
-  /* Chart series, validated with the dataviz palette checker (light surface): */
-  --chart-1: #555de3; /* twin / stated / claimed */
-  --chart-2: #00967a; /* revealed / actual */
-  --radius: 0.75rem;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: oklch(0.16 0.015 265);
-    --surface: oklch(0.2 0.018 265);
-    --surface-2: oklch(0.24 0.02 265);
-    --foreground: oklch(0.95 0.005 265);
-    --muted: oklch(0.7 0.02 265);
-    --border: oklch(0.3 0.02 265);
-    --primary: oklch(0.7 0.16 275);
-    --primary-foreground: oklch(0.16 0.015 265);
-    --twin: oklch(0.72 0.16 275);
-    --stranger: oklch(0.6 0.03 265);
-    /* Own dark steps (not an automatic flip), validated against the dark surface. */
-    --chart-1: #6b74f0;
-    --chart-2: #00a88a;
+/* `dark:` follows the same rule as the tokens: explicit data-theme wins, else the OS preference. */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme="light"]), :root:not([data-theme="light"]) *) {
+      @slot;
+    }
   }
 }
 
+/*
+ * Semantic utilities on top of src/styles/tokens.css. Components use these names only —
+ * never raw colours (UI/UX plan §13). Colour rule: ink = you, twin = rose, stranger = champagne.
+ */
 @theme inline {
-  --color-background: var(--background);
+  --color-background: var(--paper);
+  --color-paper: var(--paper);
   --color-surface: var(--surface);
-  --color-surface-2: var(--surface-2);
-  --color-foreground: var(--foreground);
-  --color-muted: var(--muted);
-  --color-border: var(--border);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-accent: var(--accent);
-  --color-twin: var(--twin);
-  --color-stranger: var(--stranger);
-  --color-success: var(--success);
-  --color-warning: var(--warning);
-  --color-danger: var(--danger);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --radius-lg: var(--radius);
-  --font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  --color-surface-2: var(--paper-2);
+  --color-foreground: var(--ink);
+  --color-ink: var(--ink);
+  --color-muted: var(--ink-2);
+  --color-faint: var(--ink-3);
+  --color-border: var(--line);
+  --color-line: var(--line);
+  --color-primary: var(--ink);
+  --color-primary-foreground: var(--paper);
+  /* twin / stranger: strong ink for text, marks and bars; *-soft for tinted backgrounds */
+  --color-twin: var(--twin-ink);
+  --color-twin-soft: var(--twin);
+  --color-stranger: var(--stranger-ink);
+  --color-stranger-soft: var(--stranger);
+  --color-success: var(--ok);
+  --color-success-soft: var(--ok-bg);
+  --color-danger: var(--bad);
+  --color-danger-soft: var(--bad-bg);
+  --color-warning: var(--warn);
+  --color-warning-soft: var(--warn-bg);
+  --color-chart-twin: var(--chart-twin);
+  --color-chart-stranger: var(--chart-stranger);
+
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+  --shadow-float: var(--shadow);
+
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-display: var(--font-display-face), var(--font-body), ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, "Cascadia Code", Menlo, monospace;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
+html {
+  background: var(--paper);
+  -webkit-text-size-adjust: 100%;
 }
 
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* Display type: Bricolage Grotesque, tight tracking (plan §2.2). */
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+/* Visible focus ring: 2.5px ink, offset 3px (plan §8). */
 :focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
+  outline: 2.5px solid var(--ink);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Sealed memories: subtle diagonal pattern (plan §6.5). */
+.pattern-sealed {
+  background-image: repeating-linear-gradient(135deg, transparent 0 7px, color-mix(in oklab, var(--ink) 5%, transparent) 7px 8px);
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+}
+
+/* Safe-area helpers for the bottom tab bar on iOS. */
+.pb-safe {
+  padding-bottom: max(env(safe-area-inset-bottom), 0px);
+}
+
+/* Top bar gains a hairline and condenses on scroll — decorative, so only where supported (plan §3.3). */
+@supports (animation-timeline: scroll()) {
+  .scroll-condense {
+    animation: condense linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0 64px;
+  }
+  @keyframes condense {
+    to {
+      box-shadow: 0 1px 0 var(--line);
+      padding-block: 0.375rem;
+    }
+  }
+}
+
+/* View transitions (plan §7): content slides in the tab direction; chrome stays put. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 340ms;
+  animation-timing-function: var(--ease-out);
+}
+html[data-dir="fwd"]::view-transition-old(root) {
+  animation-name: vt-out-left;
+}
+html[data-dir="fwd"]::view-transition-new(root) {
+  animation-name: vt-in-right;
+}
+html[data-dir="back"]::view-transition-old(root) {
+  animation-name: vt-out-right;
+}
+html[data-dir="back"]::view-transition-new(root) {
+  animation-name: vt-in-left;
+}
+::view-transition-group(morph) {
+  animation-duration: 520ms;
+  animation-timing-function: var(--ease-out);
+}
+@keyframes vt-out-left {
+  to {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+}
+@keyframes vt-in-right {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+@keyframes vt-out-right {
+  to {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+}
+@keyframes vt-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+}
+
+/* Reduced motion (plan §3.2): near-instant CSS motion, no view-transition animation. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
 }

@@ -22,7 +22,7 @@ export default function LandingPage() {
       </p>
 
       <div className="mt-8 flex flex-wrap items-center gap-3">
-        <Link href="/dashboard" className={buttonVariants({ size: "lg" })}>
+        <Link href="/sign-in" className={buttonVariants({ size: "lg" })}>
           Create my twin
         </Link>
         <span className="text-sm text-muted">Your lift over a stranger is measured live, on your own decisions.</span>
