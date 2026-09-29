@@ -30,6 +30,18 @@ Each phase ends with `npm run check` green and one or more commits. A phase is d
 | **10** | Connectors & stretch | Calendar via MCP + `needsApproval`/`RunState` + HMAC + audit; drift chart; voice | P2/P3 | approve → event → audit row |
 | **11** | Evals & demo | Aria persona seed, eval scorers + adversarial set, Playwright demo path, replay fixtures, demo script | across | held-out accuracy ≥ stranger + 10 pts; 0 leaks |
 
+## Status
+
+| Phase | State | Verified by |
+|---|---|---|
+| 0 Foundation | ✅ done | `npm run check` (91 tests), `next build` |
+| 1 Data layer | ✅ written · ⏳ needs a Supabase project to apply | SQL reviewed; repo mappers unit-tested |
+| 2 Identity | ✅ done (mock) · live needs Supabase | prod server smoke test |
+| 3 Training | ✅ done | unit tests + API smoke test |
+| 4 Memory | ✅ done (mock) · live ingest needs keys | inbox resolve / seal smoke test |
+| 5 Twin chat | ✅ done (mock) · live needs keys | SSE smoke test, prompt-safety tests |
+| 6–11 | ⏳ in progress | |
+
 ## Dependency graph
 
 ```
