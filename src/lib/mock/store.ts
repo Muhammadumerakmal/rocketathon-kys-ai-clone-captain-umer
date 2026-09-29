@@ -1,6 +1,15 @@
 import "server-only";
-import type { DuelRound, Memory, MemoryRevision, ResolveRevisionRequest } from "@/contracts";
+import type { DuelRound, Memory, MemoryRevision, Prediction, ResolveRevisionRequest } from "@/contracts";
 import { duelRound, memories, revision } from "./fixtures";
+
+export interface MockResolution {
+  predictionId: string;
+  category: Prediction["category"];
+  confidence: number;
+  actualChoice: string;
+  twinCorrect: boolean;
+  baselineCorrect: boolean;
+}
 
 /**
  * In-process state for TWIN_MOCK=1 so the demo is interactive without a database.
@@ -12,6 +21,8 @@ interface MockState {
   memories: Memory[];
   revisions: MemoryRevision[];
   duelRounds: DuelRound[];
+  predictions: Prediction[];
+  resolutions: MockResolution[];
 }
 
 const g = globalThis as typeof globalThis & { __twinMock?: MockState };
@@ -23,11 +34,19 @@ export function mockState(): MockState {
     memories: memories.map((m) => (m.id === revision.oldMemory.id ? { ...m, validTo: null, supersededBy: null } : { ...m })),
     revisions: [revision],
     duelRounds: [duelRound],
+    predictions: [],
+    resolutions: [],
   };
   return g.__twinMock;
 }
 
 export const mockAnswers = () => [...mockState().answers.values()];
+
+/** Resolved history for one category (mirror of calibration_stats). */
+export function mockCategoryHistory(category: Prediction["category"]) {
+  const rs = mockState().resolutions.filter((r) => r.category === category);
+  return { n: rs.length, hits: rs.filter((r) => r.twinCorrect).length };
+}
 
 /** Same semantics as lib/memory/resolve.ts, applied to the in-memory store. */
 export function mockResolveRevision(id: string, req: ResolveRevisionRequest): boolean {

@@ -25,11 +25,11 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/duel", label: "Predict Me", icon: Swords, phase: 7 },
   { href: "/twin", label: "Twin", icon: MessagesSquare, phase: 5 },
   { href: "/memories", label: "Memories", icon: Library, phase: 4 },
-  { href: "/decisions", label: "Decisions", icon: NotebookPen, phase: 9 },
+  { href: "/decisions", label: "Decisions", icon: NotebookPen, phase: 6 },
   { href: "/council", label: "Council", icon: Brain, phase: 9 },
   { href: "/simulator", label: "Simulator", icon: Split, phase: 9 },
   { href: "/settings/privacy", label: "Settings", icon: Settings, phase: 9 },
 ];
 
 /** Bump as phases land; items above this are shown as "coming soon". */
-export const SHIPPED_PHASE = 5;
+export const SHIPPED_PHASE = 6;

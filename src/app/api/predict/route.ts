@@ -6,7 +6,9 @@ import { extractOptions, predict } from "@/lib/ai/predict";
 import { guardAiRequest, recordUsage } from "@/lib/budget";
 import { isMock } from "@/lib/env";
 import { HttpError, parseJson, withApi } from "@/lib/http";
-import { fixtures, mockDelay } from "@/lib/mock";
+import { mockDelay } from "@/lib/mock";
+import { mockPrediction } from "@/lib/mock/predict";
+import { mockCategoryHistory, mockState } from "@/lib/mock/store";
 import { categoryHistory, insertPrediction } from "@/server/repos/predictions";
 import { requireUser } from "@/lib/supabase/server";
 
@@ -19,7 +21,9 @@ export const POST = withApi(async (req: Request) => {
   const body = await parseJson(req, PredictRequest);
   if (isMock()) {
     await mockDelay(1200);
-    return Response.json(body.asOf ? fixtures.predictionAsOfSpring : fixtures.prediction);
+    const prediction = mockPrediction({ ...body, id: randomUUID(), history: mockCategoryHistory(body.category) });
+    mockState().predictions.unshift(prediction);
+    return Response.json(prediction);
   }
 
   const { supabase, user } = await requireUser();

@@ -2,6 +2,7 @@ import { FeedbackRequest } from "@/contracts";
 import { isMock } from "@/lib/env";
 import { HttpError, parseJson, withApi } from "@/lib/http";
 import { mockDelay } from "@/lib/mock";
+import { mockState } from "@/lib/mock/store";
 import { insertMemory } from "@/server/repos/memories";
 import { getPrediction, resolvePrediction } from "@/server/repos/predictions";
 import { requireUser } from "@/lib/supabase/server";
@@ -17,7 +18,15 @@ export const POST = withApi(async (req: Request) => {
   const body = await parseJson(req, FeedbackRequest);
   if (isMock()) {
     await mockDelay(400);
-    return Response.json({ ok: true, twinCorrect: body.verdict === "correct" });
+    const s = mockState();
+    const p = s.predictions.find((x) => x.id === body.predictionId);
+    if (!p) throw new HttpError("not_found", "Prediction not found.");
+    if (p.status === "resolved") throw new HttpError("bad_request", "Already resolved.");
+    const twinCorrect = body.verdict === "correct";
+    const baselineCorrect = p.baseline.choice === body.actualChoice;
+    p.status = "resolved";
+    s.resolutions.push({ predictionId: p.id, category: p.category, confidence: p.confidence.value, actualChoice: body.actualChoice, twinCorrect, baselineCorrect });
+    return Response.json({ ok: true, twinCorrect, baselineCorrect });
   }
 
   const { supabase, user } = await requireUser();
