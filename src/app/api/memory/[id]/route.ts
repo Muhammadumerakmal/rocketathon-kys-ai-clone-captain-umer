@@ -2,7 +2,7 @@ import { UpdateMemoryRequest, Uuid } from "@/contracts";
 import { embed } from "@/lib/ai/embeddings";
 import { isMock } from "@/lib/env";
 import { HttpError, parseJson, withApi } from "@/lib/http";
-import { fixtures } from "@/lib/mock";
+import { mockState } from "@/lib/mock/store";
 import { deleteMemory, getMemories, toVectorLiteral, updateMemory } from "@/server/repos/memories";
 import { requireUser } from "@/lib/supabase/server";
 
@@ -21,7 +21,13 @@ async function memoryId(params: Params["params"]) {
 export const PATCH = withApi(async (req: Request, { params }: Params) => {
   const id = await memoryId(params);
   const body = await parseJson(req, UpdateMemoryRequest);
-  if (isMock()) return Response.json({ memory: { ...fixtures.memories[0]!, id, ...body } });
+  if (isMock()) {
+    const list = mockState().memories;
+    const i = list.findIndex((m) => m.id === id);
+    if (i < 0) throw new HttpError("not_found", "Memory not found.");
+    list[i] = { ...list[i]!, ...body };
+    return Response.json({ memory: list[i] });
+  }
 
   const { supabase } = await requireUser();
   const [current] = await getMemories(supabase, [id]);
@@ -45,7 +51,11 @@ export const PATCH = withApi(async (req: Request, { params }: Params) => {
 
 export const DELETE = withApi(async (_req: Request, { params }: Params) => {
   const id = await memoryId(params);
-  if (isMock()) return new Response(null, { status: 204 });
+  if (isMock()) {
+    const s = mockState();
+    s.memories = s.memories.filter((m) => m.id !== id);
+    return new Response(null, { status: 204 });
+  }
   const { supabase } = await requireUser();
   await deleteMemory(supabase, id);
   return new Response(null, { status: 204 });
