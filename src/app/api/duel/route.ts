@@ -54,6 +54,17 @@ export const POST = withApi(async (req: Request) => {
       baselineMatched: baselineChoice === body.userChoice,
     };
     mockState().duelRounds.unshift(round);
+    // a duel is a resolved decision too: it goes in the same ledger as confirmed predictions
+    mockState().resolutions.push({
+      predictionId: round.id,
+      scenario: scenario.scenario,
+      at: new Date().toISOString(),
+      category: scenario.category,
+      confidence: Math.min(0.95, Math.max(0.05, Math.max(...Object.values(twin.distribution)))),
+      actualChoice: body.userChoice,
+      twinCorrect: round.twinMatched,
+      baselineCorrect: round.baselineMatched,
+    });
     return Response.json({ round, ...state(mockState().duelRounds) });
   }
 

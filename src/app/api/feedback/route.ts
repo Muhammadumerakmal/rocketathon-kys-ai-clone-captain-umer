@@ -26,7 +26,7 @@ export const POST = withApi(async (req: Request) => {
     const twinCorrect = body.verdict === "correct";
     const baselineCorrect = p.baseline.choice === body.actualChoice;
     p.status = "resolved";
-    s.resolutions.push({ predictionId: p.id, category: p.category, confidence: p.confidence.value, actualChoice: body.actualChoice, twinCorrect, baselineCorrect });
+    s.resolutions.push({ predictionId: p.id, scenario: p.scenario, at: new Date().toISOString(), category: p.category, confidence: p.confidence.value, actualChoice: body.actualChoice, twinCorrect, baselineCorrect });
     // Real mode schedules the check-in 7 days out; the demo makes it due now so it can be shown.
     s.checkins.push({ id: crypto.randomUUID(), predictionId: p.id, scenario: p.scenario, topChoice: body.actualChoice, dueAt: new Date().toISOString() });
     return Response.json({ ok: true, twinCorrect, baselineCorrect });

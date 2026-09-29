@@ -145,3 +145,20 @@ export async function reliabilityPoints(sb: SupabaseClient): Promise<{ confidenc
   if (error) throw error;
   return data.map((r) => ({ confidence: r.predictions.confidence, correct: r.twin_correct }));
 }
+
+/** Resolved decisions in order (confirmed predictions and duel rounds) for the Insights ledger. */
+export async function ledgerEntries(sb: SupabaseClient) {
+  const { data, error } = await sb
+    .from("feedback")
+    .select("created_at,twin_correct,baseline_correct,predictions!inner(scenario)")
+    .order("created_at", { ascending: true })
+    .limit(200)
+    .returns<{ created_at: string; twin_correct: boolean; baseline_correct: boolean; predictions: { scenario: string } }[]>();
+  if (error) throw error;
+  return data.map((r) => ({
+    at: new Date(r.created_at).toISOString(),
+    scenario: r.predictions.scenario,
+    twinCorrect: r.twin_correct,
+    baselineCorrect: r.baseline_correct,
+  }));
+}

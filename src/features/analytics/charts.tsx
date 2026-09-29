@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import type { TraitScore } from "@/contracts";
 import type { ReliabilityBin } from "@/lib/ai/confidence";
 import { cn, pct } from "@/lib/utils";
 
@@ -26,8 +25,8 @@ export function ReliabilityChart({ bins }: { bins: ReliabilityBin[] }) {
   return (
     <figure className="space-y-3">
       <div className="flex flex-wrap gap-4" aria-hidden>
-        <Key className="bg-chart-2" label="What actually happened (hit rate)" />
-        <Key className="bg-chart-1" label="What the twin claimed (confidence)" shape="tick" />
+        <Key className="bg-ink" label="What actually happened (hit rate)" />
+        <Key className="bg-chart-twin" label="What the twin claimed (confidence)" shape="tick" />
       </div>
       <div className="relative flex h-44 items-end gap-3 border-b border-border pl-8" role="img" aria-label={`Reliability over ${total} resolved predictions`}>
         {/* recessive gridlines + y labels */}
@@ -50,8 +49,8 @@ export function ReliabilityChart({ bins }: { bins: ReliabilityBin[] }) {
           >
             {b.count > 0 ? (
               <>
-                <div className="w-full max-w-10 rounded-t-[4px] bg-chart-2 transition-opacity group-hover:opacity-80" style={{ height: `${Math.max(b.hitRate * 100, 1)}%` }} />
-                <div className="absolute h-0.5 w-full max-w-12 bg-chart-1" style={{ bottom: `${b.meanConfidence * 100}%` }} />
+                <div className="w-full max-w-10 rounded-t-[4px] bg-ink transition-opacity group-hover:opacity-80" style={{ height: `${Math.max(b.hitRate * 100, 1)}%` }} />
+                <div className="absolute h-0.5 w-full max-w-12 bg-chart-twin" style={{ bottom: `${b.meanConfidence * 100}%` }} />
               </>
             ) : (
               <div className="mb-1 text-[10px] text-muted">—</div>
@@ -108,64 +107,5 @@ export function ReliabilityChart({ bins }: { bins: ReliabilityBin[] }) {
         </table>
       </details>
     </figure>
-  );
-}
-
-const TRAIT_NAMES: Record<TraitScore["trait"], [string, string]> = {
-  risk_tolerance: ["Risk-averse", "Risk-seeking"],
-  opportunity_over_stability: ["Stability", "Opportunity"],
-  gut_over_analysis: ["Analytical", "Gut"],
-  long_term_focus: ["Short-term", "Long-term"],
-  social_influence: ["Independent of others", "Swayed by others"],
-  procrastination: ["Starts early", "Procrastinates"],
-  independence: ["Follows guidance", "Own path"],
-  frugality: ["Spends freely", "Frugal"],
-};
-
-/** Stated (quiz) vs revealed (real choices) per trait — the Blind Spot Mirror's evidence. */
-export function TraitComparison({ stated, revealed }: { stated: TraitScore[]; revealed: TraitScore[] }) {
-  const rev = new Map(revealed.filter((r) => r.sampleCount > 0).map((r) => [r.trait, r]));
-  const hasRevealed = rev.size > 0;
-
-  return (
-    <figure className="space-y-3">
-      {hasRevealed && (
-        <div className="flex flex-wrap gap-4" aria-hidden>
-          <Key className="bg-chart-1" label="What you said (quiz)" />
-          <Key className="bg-chart-2" label="What you did (real choices)" />
-        </div>
-      )}
-      <ul className="space-y-3">
-        {stated.map((s) => {
-          const [lo, hi] = TRAIT_NAMES[s.trait];
-          const r = rev.get(s.trait);
-          return (
-            <li key={s.trait} className="text-xs">
-              <div className="flex justify-between text-muted">
-                <span>{lo}</span>
-                <span>{hi}</span>
-              </div>
-              <Bar value={s.sampleCount ? s.score : null} className="bg-chart-1" label={`${lo} vs ${hi}, stated`} />
-              {hasRevealed && <Bar value={r ? r.score : null} className="bg-chart-2" label={`${lo} vs ${hi}, revealed (${r?.sampleCount ?? 0} choices)`} />}
-            </li>
-          );
-        })}
-      </ul>
-    </figure>
-  );
-}
-
-function Bar({ value, className, label }: { value: number | null; className: string; label: string }) {
-  return (
-    <div className="mt-1 flex items-center gap-2" title={value === null ? `${label}: unknown yet` : `${label}: ${pct(value)}`}>
-      <div className="relative h-2 flex-1 rounded-full bg-surface-2">
-        {/* centre line = neutral 0.5 */}
-        <span aria-hidden className="absolute left-1/2 top-0 h-2 w-px bg-border" />
-        {value !== null && <span className={cn("absolute top-0 h-2 w-2 -translate-x-1/2 rounded-full ring-2 ring-surface", className)} style={{ left: pct(value) }} />}
-      </div>
-      <span className="w-9 text-right tabular-nums text-muted" aria-label={label}>
-        {value === null ? "—" : pct(value)}
-      </span>
-    </div>
   );
 }

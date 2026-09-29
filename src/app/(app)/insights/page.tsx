@@ -1,34 +1,46 @@
 import { Eye, Info } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
-import { ReliabilityChart, TraitComparison } from "@/features/analytics/charts";
+import { Chip } from "@/components/ui/chip";
+import { AccuracyChart } from "@/features/analytics/accuracy-chart";
+import { ReliabilityChart } from "@/features/analytics/charts";
+import { DecisionLedger } from "@/features/analytics/decision-ledger";
+import { SayVsDo } from "@/features/analytics/say-vs-do";
+import { leadSentence } from "@/lib/analytics/ledger";
 import { requireViewer } from "@/lib/auth";
+import { TRAIT_POLES } from "@/lib/training/labels";
 import { pct } from "@/lib/utils";
 import { loadDashboard } from "@/server/dashboard";
 
 export const metadata: Metadata = { title: "Insights" };
 
-/** The honesty dashboard (plan §19): does the twin actually know you, and is it honest about it? */
+/**
+ * Insights (UI/UX plan §6.6): a sentence first, then the charts that back it up.
+ * Server-rendered data; charts are small client islands. "Readiness" and "match rate",
+ * never "% cloned".
+ */
 export default async function InsightsPage() {
   const viewer = await requireViewer();
   const d = await loadDashboard(viewer);
-  const empty = d.resolved === 0;
+  const empty = d.ledger.length === 0;
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h1 className="font-display text-3xl font-bold">Insights</h1>
-          <p className="text-sm text-muted">Readiness and match rate — never &quot;% cloned&quot;.</p>
-        </div>
-        {viewer.mode === "mock" && <Badge tone="warning">Demo mode</Badge>}
+    <div className="mx-auto max-w-3xl space-y-6">
+      <header className="space-y-2">
+        <h1 className="font-display text-[clamp(30px,8vw,44px)] font-bold leading-tight">Insights</h1>
+        <p className="font-display text-xl font-semibold leading-snug">{leadSentence(d.ledger)}</p>
+        {!empty && (
+          <p className="text-sm text-muted">
+            Personalization lift: <strong className="text-foreground">{d.liftPts > 0 ? "+" : ""}{d.liftPts} points</strong> over a stranger
+            {d.brier !== null && <> · calibration (Brier) {d.brier.toFixed(2)}, lower is better</>}.
+          </p>
+        )}
       </header>
 
       {d.openRevisions > 0 && (
-        <Card className="flex flex-wrap items-center justify-between gap-2 border-warning/60 py-3">
+        <Card className="flex flex-wrap items-center justify-between gap-2 py-3">
           <p className="text-sm">
             {d.openRevisions} belief{d.openRevisions > 1 ? "s" : ""} changed — your twin needs you to confirm.
           </p>
@@ -38,89 +50,101 @@ export default async function InsightsPage() {
         </Card>
       )}
 
-      <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Headline numbers">
-        <Card>
-          <CardDescription>Personalization lift</CardDescription>
-          <p className="mt-1 text-3xl font-semibold tabular-nums">{empty ? "—" : `${d.liftPts > 0 ? "+" : ""}${d.liftPts} pts`}</p>
-          <CardDescription>
-            {empty ? "Resolve a prediction or play Predict Me" : `twin ${pct(d.twinAccuracy ?? 0)} vs stranger ${pct(d.strangerAccuracy ?? 0)}, ${d.resolved} decisions`}
-          </CardDescription>
+      {empty ? (
+        <Card className="space-y-3 text-center">
+          <CardDescription>Confirm a few predictions and your twin&apos;s score will show up here.</CardDescription>
+          <div className="flex flex-wrap justify-center gap-2">
+            <Link href="/duel" className={buttonVariants({ size: "sm" })}>
+              Play Predict me
+            </Link>
+            <Link href="/twin" className={buttonVariants({ size: "sm", variant: "secondary" })}>
+              Ask your twin
+            </Link>
+          </div>
         </Card>
-        <Card>
-          <CardDescription>Readiness</CardDescription>
-          <p className="mt-1 text-3xl font-semibold tabular-nums">
-            {d.readiness.known}/{d.readiness.total}
-          </p>
-          <CardDescription>decision dimensions known · {d.memoryCount} memories</CardDescription>
-        </Card>
-        <Card>
-          <CardDescription>Your own consistency</CardDescription>
-          <p className="mt-1 text-3xl font-semibold tabular-nums">{d.ceiling === null ? "—" : pct(d.ceiling)}</p>
-          <CardDescription>
-            {d.ceiling === null
-              ? "Finish training to measure it"
-              : d.relativeToCeiling !== null
-                ? `twin reaches ${pct(d.relativeToCeiling)} of it`
-                : "same answer when asked twice"}
-          </CardDescription>
-        </Card>
-        <Card>
-          <CardDescription>Calibration (Brier)</CardDescription>
-          <p className="mt-1 text-3xl font-semibold tabular-nums">{d.brier === null ? "—" : d.brier.toFixed(2)}</p>
-          <CardDescription>lower is better · 0.25 = coin flip</CardDescription>
-        </Card>
-      </section>
+      ) : (
+        <>
+          <Card className="space-y-2">
+            <CardTitle>Right over time</CardTitle>
+            <AccuracyChart ledger={d.ledger} />
+          </Card>
+          <Card className="space-y-2">
+            <CardTitle>Every decision</CardTitle>
+            <DecisionLedger ledger={d.ledger} />
+          </Card>
+        </>
+      )}
 
-      <div className="grid gap-6 lg:grid-cols-2">
+      <Card className="space-y-3">
+        <CardTitle>What you say vs what you do</CardTitle>
+        {d.readiness.known === 0 ? (
+          <div className="space-y-2">
+            <CardDescription>Train your twin so it knows how you decide.</CardDescription>
+            <Link href="/train" className={buttonVariants({ size: "sm" })}>
+              Start training
+            </Link>
+          </div>
+        ) : (
+          <>
+            <SayVsDo stated={d.stated} revealed={d.revealed} />
+            <CardDescription>
+              {d.ceiling === null
+                ? "Finish training to measure your own consistency."
+                : `You gave the same answer ${pct(d.ceiling)} of the time when asked twice${d.relativeToCeiling !== null ? ` — your twin reaches ${pct(d.relativeToCeiling)} of that` : ""}.`}
+            </CardDescription>
+          </>
+        )}
+      </Card>
+
+      {d.blindSpots.length > 0 && (
+        <section className="space-y-3" aria-labelledby="blind">
+          <h2 id="blind" className="flex items-center gap-2 font-display text-xl font-bold">
+            <Eye className="size-5" aria-hidden /> Blind spots
+          </h2>
+          <div className="grid gap-3 min-[640px]:grid-cols-2">
+            {d.blindSpots.map((b) => {
+              const [lo, hi] = TRAIT_POLES[b.trait];
+              return (
+                <Card key={b.trait} className="space-y-1">
+                  <Chip tone="warn">
+                    {lo} ↔ {hi}
+                  </Chip>
+                  <p className="text-sm">
+                    You say <strong>{pct(b.stated)}</strong>, but your real choices show <strong>{pct(b.revealed)}</strong> across {b.samples} decisions.
+                  </p>
+                  <CardDescription>Your twin now trusts your real choices more than your quiz answers here.</CardDescription>
+                </Card>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {!empty && (
         <Card className="space-y-3">
           <div className="flex items-center gap-2">
             <CardTitle>Is its confidence honest?</CardTitle>
-            <span title="If the twin says 70%, it should be right about 70% of the time. Ticks on top of bars = honest.">
+            <span title="If your twin says 70%, it should be right about 70% of the time. Ticks on top of bars = honest.">
               <Info className="size-4 text-muted" aria-hidden />
             </span>
           </div>
-          {empty ? <CardDescription>No resolved predictions yet.</CardDescription> : <ReliabilityChart bins={d.reliability} />}
+          <ReliabilityChart bins={d.reliability} />
         </Card>
+      )}
 
-        <Card className="space-y-3">
-          <CardTitle>Decision DNA</CardTitle>
-          {d.readiness.known === 0 ? (
-            <div className="space-y-2">
-              <CardDescription>Take the quiz so your twin learns how you decide.</CardDescription>
-              <Link href="/train" className={buttonVariants({ size: "sm" })}>
-                Start training
-              </Link>
-            </div>
-          ) : (
-            <TraitComparison stated={d.stated} revealed={d.revealed} />
-          )}
-        </Card>
-      </div>
-
-      <section className="space-y-3" aria-labelledby="blind">
-        <h2 id="blind" className="flex items-center gap-2 text-lg font-semibold">
-          <Eye className="size-5" aria-hidden /> Blind Spot Mirror
-        </h2>
-        {d.blindSpots.length === 0 ? (
-          <Card>
-            <CardDescription>
-              No blind spots yet. They appear when what you say and what you do differ by 30+ points across at least 3 real choices.
-            </CardDescription>
-          </Card>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {d.blindSpots.map((b) => (
-              <Card key={b.trait} className="space-y-1">
-                <CardTitle className="capitalize">{b.trait.replaceAll("_", " ")}</CardTitle>
-                <p className="text-sm">
-                  You say <strong>{pct(b.stated)}</strong>, but your real choices show <strong>{pct(b.revealed)}</strong> across {b.samples} decisions.
-                </p>
-                <CardDescription>Your twin now weights your real choices more than your quiz answers here.</CardDescription>
-              </Card>
-            ))}
-          </div>
-        )}
-      </section>
+      <p className="text-center text-sm text-muted">
+        <Link href="/decisions" className="underline underline-offset-4 hover:text-foreground">
+          Decision journal
+        </Link>{" "}
+        ·{" "}
+        <Link href="/council" className="underline underline-offset-4 hover:text-foreground">
+          Council
+        </Link>{" "}
+        ·{" "}
+        <Link href="/simulator" className="underline underline-offset-4 hover:text-foreground">
+          Simulator
+        </Link>
+      </p>
     </div>
   );
 }

@@ -13,6 +13,9 @@ import { memories, revision } from "./fixtures";
 
 export interface MockResolution {
   predictionId: string;
+  scenario: string;
+  /** ISO time it was resolved — orders the Insights ledger */
+  at: string;
   category: Prediction["category"];
   confidence: number;
   actualChoice: string;
