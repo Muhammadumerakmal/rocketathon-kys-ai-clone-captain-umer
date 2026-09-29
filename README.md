@@ -24,8 +24,7 @@ npm run dev           # http://localhost:3000
 
 ## Modes
 
-- `TWIN_MOCK=1`: every AI route returns contract-valid fixtures. No keys or database needed.
-- `TWIN_REPLAY=1`: replays recorded real outputs for the Aria demo (on-stage fallback).
+- `TWIN_MOCK=1` (demo): every AI route returns contract-valid fixtures; no keys or database needed. Data is in memory and resets on restart.
 - Neither: live Supabase + OpenAI.
 
 ## Deploy
