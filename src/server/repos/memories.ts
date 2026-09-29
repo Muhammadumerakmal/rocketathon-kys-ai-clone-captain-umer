@@ -167,14 +167,61 @@ export async function matchMemories(
 export async function findCurrentPreference(sb: SupabaseClient, category: MemoryCategory, key: string) {
   const { data, error } = await sb
     .from("memories")
-    .select("id,content,confidence,source_type,evidence")
+    .select("id,content,summary,confidence,source_type")
     .eq("category", category)
     .eq("memory_key", key)
     .is("valid_to", null)
     .neq("influence", "sealed")
-    .maybeSingle<{ id: string; content: string; confidence: number; source_type: MemorySource; evidence: string | null }>();
+    .maybeSingle<{ id: string; content: string; summary: string | null; confidence: number; source_type: MemorySource }>();
   if (error) throw error;
   return data;
+}
+
+/** Current preference keys so the learner can reuse a stable key for a correction. */
+export async function knownPreferenceKeys(sb: SupabaseClient, limit = 60): Promise<string[]> {
+  const { data, error } = await sb
+    .from("memories")
+    .select("category,memory_key")
+    .not("memory_key", "is", null)
+    .is("valid_to", null)
+    .neq("influence", "sealed")
+    .limit(limit)
+    .returns<{ category: string; memory_key: string }[]>();
+  if (error) throw error;
+  return [...new Set(data.map((r) => `${r.category}.${r.memory_key}`))];
+}
+
+/** Atomically replace a current learned preference and link its history. */
+export async function replaceLearnedMemory(
+  sb: SupabaseClient,
+  oldId: string,
+  m: NewMemory & {
+    summary: string;
+    sourceType: MemorySource;
+    importance: number;
+    category: MemoryCategory;
+    key: string;
+    confidence: number;
+    evidence: string;
+    /** null falls back to full-text retrieval only, like insertMemory. */
+    embedding: readonly number[] | null;
+  },
+): Promise<string> {
+  const { data, error } = await sb.rpc("replace_learned_memory", {
+    p_old_id: oldId,
+    p_content: m.content,
+    p_summary: m.summary,
+    p_kind: m.kind,
+    p_source_type: m.sourceType,
+    p_importance: m.importance,
+    p_category: m.category,
+    p_memory_key: m.key,
+    p_confidence: m.confidence,
+    p_evidence: m.evidence,
+    p_embedding: m.embedding ? toVectorLiteral(m.embedding) : null,
+  });
+  if (error) throw error;
+  return data as string;
 }
 
 /** Close a belief (it stops being true now) — history is kept, never deleted. */

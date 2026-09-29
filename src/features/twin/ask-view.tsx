@@ -79,7 +79,6 @@ export function AskView() {
                   if (prev?.role === "user") submit(prev.text, t.kind === "prediction");
                 }}
                 onRetime={(asOf) => t.kind === "prediction" && t.prediction && ask.retime(t.id, t.scenario, t.prediction.options, asOf)}
-                onDismissSuggestion={(content) => ask.dismissSuggestion(t.id, content)}
               />
             ),
           )

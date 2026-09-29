@@ -1,19 +1,21 @@
 import { run, withTrace } from "@openai/agents";
 import { TwinChatRequest, type TwinStreamEvent } from "@/contracts";
 import { twinChatAgent } from "@/lib/ai/agents";
-import { buildTwinContext, knownPreferenceKeys } from "@/lib/ai/context";
+import { buildTwinContext } from "@/lib/ai/context";
 import { applyLearning, extractLearning } from "@/lib/ai/learning.server";
+import { isExplicitMemoryRequest } from "@/lib/ai/learning";
 import { configureAgents, TIMEOUTS } from "@/lib/ai/models";
 import { SupabaseSession } from "@/lib/ai/session";
 import { pipeAgentText, sseResponse } from "@/lib/ai/stream";
 import { focusBlockTool, neverExecute } from "@/lib/ai/tools";
-import { guardAiRequest, recordUsage } from "@/lib/budget";
+import { checkBudget, guardAiRequest, recordUsage } from "@/lib/budget";
 import { createProposal, isCalendarConnected } from "@/lib/connectors/gateway";
 import { isMock } from "@/lib/env";
 import { HttpError, parseJson, withApi } from "@/lib/http";
 import { mockChat } from "@/lib/mock/chat";
 import { requireUser } from "@/lib/supabase/server";
-import { adjustConfidence } from "@/server/repos/memories";
+import { adjustConfidence, knownPreferenceKeys } from "@/server/repos/memories";
+import { chatExists, createChat, touchChat } from "@/server/repos/chats";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -36,14 +38,12 @@ export const POST = withApi(async (req: Request) => {
 
   let chatId = body.chatId;
   if (!chatId) {
-    const { data, error } = await supabase.from("chats").insert({ user_id: user.id, title: body.message.slice(0, 80) }).select("id").single<{ id: string }>();
-    if (error) throw error;
-    chatId = data.id;
+    chatId = await createChat(supabase, user.id, body.message.slice(0, 80));
   } else {
-    const { data } = await supabase.from("chats").select("id").eq("id", chatId).maybeSingle();
-    if (!data) throw new HttpError("not_found", "Conversation not found.");
+    if (!(await chatExists(supabase, chatId))) throw new HttpError("not_found", "Conversation not found.");
   }
   const threadId = chatId;
+  const explicitMemoryRequest = isExplicitMemoryRequest(body.message);
 
   return sseResponse<TwinStreamEvent>(
     (send) =>
@@ -51,7 +51,13 @@ export const POST = withApi(async (req: Request) => {
         send({ type: "meta", chatId: threadId });
 
         // Start learning immediately: it only needs the message (+ existing keys to reuse).
-        const learning = knownPreferenceKeys(supabase).then((keys) => extractLearning(body.message, keys));
+        const learning = checkBudget(supabase)
+          .then(() => knownPreferenceKeys(supabase))
+          .then((keys) => extractLearning(body.message, keys))
+          .catch((err) => {
+            console.warn("[learning] skipped", err instanceof Error ? err.message : err);
+            return null;
+          });
 
         send({ type: "status", step: "retrieving" });
         const [ctx, canSchedule] = await Promise.all([
@@ -79,8 +85,9 @@ export const POST = withApi(async (req: Request) => {
           signal: AbortSignal.timeout(TIMEOUTS.chat),
         });
         await pipeAgentText(result, send);
+        send({ type: "answer_complete" });
         await recordUsage(supabase, result.state.usage);
-        await supabase.from("chats").update({ updated_at: new Date().toISOString() }).eq("id", threadId);
+        await touchChat(supabase, threadId);
         if (ctx.memories.length > 0) await adjustConfidence(supabase, ctx.memories.map((m) => m.id), 0).catch(() => undefined); // last_used_at
 
         const pending = result.interruptions[0];
@@ -98,6 +105,10 @@ export const POST = withApi(async (req: Request) => {
         }
 
         const learned = await learning;
+        if (!learned) {
+          if (explicitMemoryRequest) send({ type: "memory_update_failed", message: "I couldn't update your memory. Please try again." });
+          return;
+        }
         await recordUsage(supabase, learned.usage);
         const update = await applyLearning(supabase, user.id, learned.learning, "conversation", body.message.slice(0, 300)).catch((err) => {
           console.warn("[learning] apply failed", err instanceof Error ? err.message : err);
@@ -106,6 +117,8 @@ export const POST = withApi(async (req: Request) => {
         // Learn quietly; only tell the user when they asked (remember / forget) — spec §29.
         if (update && update.explicit && (update.saved.length || update.replaced.length || update.forgotten.length || update.reinforced.length)) {
           send({ type: "memory_update", update });
+        } else if (explicitMemoryRequest) {
+          send({ type: "memory_update_failed", message: "I couldn't confirm a memory update. Please try again or use Memories." });
         }
       }),
     { userMessage: body.message },

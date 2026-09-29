@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { LearnedSignal } from "@/contracts";
-import { CONFIDENCE, heuristicLearning, normalizeKey, planUpsert, validateSignals, type ExistingPreference } from "@/lib/ai/learning";
+import { CONFIDENCE, heuristicLearning, isExplicitMemoryRequest, normalizeKey, planUpsert, selectForgetMatches, validateSignals, type ExistingPreference } from "@/lib/ai/learning";
 
 const sig = (over: Partial<LearnedSignal> = {}): LearnedSignal => ({
   category: "coding",
@@ -86,5 +86,22 @@ describe("heuristicLearning (demo mode)", () => {
   it("recognizes forget commands", () => {
     expect(heuristicLearning("Forget my React preference.").forget).toEqual(["React preference"]);
     expect(heuristicLearning("I don't prefer React anymore.").forget).toEqual(["React"]);
+  });
+});
+
+describe("safe forgetting", () => {
+  it("requires a direct memory command", () => {
+    expect(isExplicitMemoryRequest("Forget my React preference.")).toBe(true);
+    expect(isExplicitMemoryRequest("Do not forget my React preference.")).toBe(false);
+  });
+
+  it("only selects a strongly similar memory naming the requested subject", () => {
+    const hits = [
+      { id: "unrelated", content: "I like Vite for frontend work.", memory_key: "preferred_framework", similarity: 0.9 },
+      { id: "keyword-only", content: "I tried React once on a project.", memory_key: null, similarity: 0 },
+      { id: "wanted", content: "I prefer React for frontend work.", memory_key: "preferred_framework", similarity: 0.8 },
+      { id: "also-wanted", content: "I use React sometimes.", memory_key: null, similarity: 0.7 },
+    ];
+    expect(selectForgetMatches("React preference", hits).map((m) => m.id)).toEqual(["wanted"]);
   });
 });

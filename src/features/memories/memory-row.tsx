@@ -111,7 +111,7 @@ export function MemoryRow({
         </button>
 
         {/* expand: grid-template-rows 0fr → 1fr (plan §6.5) */}
-        <div className={cn("grid transition-[grid-template-rows] duration-300 ease-out", open ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
+        <div inert={!open} className={cn("grid transition-[grid-template-rows] duration-300 ease-out", open ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
           <div className="overflow-hidden">
             <div className="flex flex-wrap items-center gap-1 border-t border-line px-2 py-1.5 text-sm">
               <span className="px-2 text-xs text-muted">
@@ -146,7 +146,6 @@ function RowAction({ label, onClick, danger, children }: { label: string; onClic
     <button
       type="button"
       onClick={onClick}
-      tabIndex={-1 /* reachable via the row's own tab order when expanded */}
       className={cn("flex min-h-11 items-center gap-1.5 rounded-full px-3 font-semibold hover:bg-surface-2", danger ? "text-danger" : "text-foreground")}
     >
       {children}

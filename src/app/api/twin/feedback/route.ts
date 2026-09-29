@@ -1,5 +1,4 @@
 import { AnswerFeedbackRequest } from "@/contracts";
-import { knownPreferenceKeys } from "@/lib/ai/context";
 import { applyLearning, emptyUpdate, extractLearning } from "@/lib/ai/learning.server";
 import { CONFIDENCE } from "@/lib/ai/learning";
 import { guardAiRequest, recordUsage } from "@/lib/budget";
@@ -7,7 +6,8 @@ import { isMock } from "@/lib/env";
 import { parseJson, withApi } from "@/lib/http";
 import { mockAnswerFeedback } from "@/lib/mock/chat";
 import { requireUser } from "@/lib/supabase/server";
-import { adjustConfidence } from "@/server/repos/memories";
+import { adjustConfidence, knownPreferenceKeys } from "@/server/repos/memories";
+import { insertMessageFeedback } from "@/server/repos/message-feedback";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,21 +25,13 @@ export const POST = withApi(async (req: Request) => {
   if (isMock()) return Response.json({ update: mockAnswerFeedback(body) });
 
   const { supabase, user } = await requireUser();
-  const { error } = await supabase.from("message_feedback").insert({
-    user_id: user.id,
-    chat_id: body.chatId,
-    answer_excerpt: body.answerExcerpt,
-    rating: body.rating,
-    correction: body.correction ?? null,
-    memory_ids_used: body.memoryIds,
-  });
-  if (error) throw error;
+  if (body.correction && body.rating !== "exactly") await guardAiRequest(supabase, user.id);
+  await insertMessageFeedback(supabase, user.id, body);
 
   await adjustConfidence(supabase, body.memoryIds, DELTA[body.rating]);
 
   let update = emptyUpdate();
   if (body.correction && body.rating !== "exactly") {
-    await guardAiRequest(supabase, user.id);
     const keys = await knownPreferenceKeys(supabase);
     const learned = await extractLearning(body.correction, keys);
     await recordUsage(supabase, learned.usage);

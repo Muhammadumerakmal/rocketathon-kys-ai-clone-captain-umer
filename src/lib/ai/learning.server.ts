@@ -2,14 +2,15 @@ import "server-only";
 import { Agent, run } from "@openai/agents";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { ModelLearning, type MemoryUpdate } from "@/contracts";
-import { adjustConfidence, closeMemory, findCurrentPreference, insertMemory, matchMemories } from "@/server/repos/memories";
+import { adjustConfidence, deleteMemory, findCurrentPreference, insertMemory, matchMemories, replaceLearnedMemory } from "@/server/repos/memories";
 import { embed } from "./embeddings";
-import { CONFIDENCE, LEARNING_INSTRUCTIONS, planUpsert, sourceFor, validateSignals } from "./learning";
+import { CONFIDENCE, isExplicitForgetRequest, planUpsert, selectForgetMatches, sourceFor, validateSignals } from "./learning";
 import { configureAgents, models, TIMEOUTS } from "./models";
+import { LEARNING_INSTRUCTIONS } from "./prompts/learning";
 import { escapeData } from "./prompts/user-data";
 
 /** How similar a stored memory must be to a "forget X" request before we remove it. */
-const FORGET_SIMILARITY = 0.45;
+const FORGET_SIMILARITY = 0.55;
 
 export const emptyUpdate = (): MemoryUpdate => ({ explicit: false, saved: [], reinforced: [], replaced: [], forgotten: [] });
 
@@ -32,7 +33,7 @@ export async function extractLearning(
     });
     const keys = knownKeys.length ? `\nExisting preference keys (REUSE one when the message is about the same thing): ${knownKeys.slice(0, 60).join(", ")}` : "";
     const res = await run(agent, `<user_data>${escapeData(message)}</user_data>${keys}`, { maxTurns: 1, signal: AbortSignal.timeout(TIMEOUTS.fast) });
-    return { learning: res.finalOutput ?? none.learning, usage: res.state.usage };
+    return { learning: ModelLearning.parse(res.finalOutput ?? none.learning), usage: res.state.usage };
   } catch (err) {
     console.warn("[learning] extraction skipped", err instanceof Error ? err.message : err);
     return none;
@@ -52,7 +53,7 @@ export async function applyLearning(
 ): Promise<MemoryUpdate> {
   const update = emptyUpdate();
   const signals = validateSignals(learning.signals);
-  update.explicit = signals.some((s) => s.explicit) || learning.forget.length > 0 || via === "feedback";
+  update.explicit = signals.some((s) => s.explicit) || (learning.forget.length > 0 && isExplicitForgetRequest(evidence)) || via === "feedback";
 
   for (const signal of signals) {
     const existing = await findCurrentPreference(sb, signal.category, signal.key);
@@ -61,8 +62,7 @@ export async function applyLearning(
       existing
         ? {
             id: existing.id,
-            // the normalized value is stored on evidence's first line (see insert below)
-            value: existing.evidence?.split("\n")[0] ?? null,
+            value: existing.summary,
             content: existing.content,
             confidence: existing.confidence,
             sourceType: existing.source_type,
@@ -75,34 +75,35 @@ export async function applyLearning(
       update.reinforced.push(signal.statement);
       continue;
     }
-    // supersede: close the old value FIRST (one current value per key is a DB constraint)
-    if (plan.action === "supersede" && existing) await closeMemory(sb, existing.id);
-    const saved = await insertMemory(sb, userId, {
+    // Prepare the embedding before closing an old belief, since embedding can fail.
+    const embedding = await embed(signal.statement);
+    const nextMemory = {
       content: signal.statement,
+      summary: signal.value,
       kind: signal.kind,
       sourceType: sourceFor(signal, via),
       importance: signal.confidence,
       category: signal.category,
       key: signal.key,
       confidence: via === "feedback" ? CONFIDENCE.feedback : signal.confidence,
-      // the normalized value lives in `evidence`'s first line so repeats can be matched later
-      evidence: `${signal.value}\n${evidence}`.slice(0, 500),
-      embedding: await embed(signal.statement),
-    });
+      evidence: evidence.slice(0, 500),
+      embedding,
+    };
     if (plan.action === "supersede" && existing) {
-      await closeMemory(sb, existing.id, saved.id);
+      await replaceLearnedMemory(sb, existing.id, nextMemory);
       update.replaced.push({ from: existing.content, to: signal.statement });
     } else {
+      await insertMemory(sb, userId, nextMemory);
       update.saved.push(signal.statement);
     }
   }
 
   // "Forget my React preference": remove the closest matching memories (spec §43).
-  for (const what of learning.forget) {
+  for (const what of isExplicitForgetRequest(evidence) ? learning.forget : []) {
     const hits = await matchMemories(sb, { queryText: what, embedding: await embed(what), limit: 3, minSimilarity: FORGET_SIMILARITY });
-    for (const h of hits) {
-      const { error } = await sb.from("memories").delete().eq("id", h.id);
-      if (!error) update.forgotten.push(h.content);
+    for (const h of selectForgetMatches(what, hits)) {
+      await deleteMemory(sb, h.id);
+      update.forgotten.push(h.content);
     }
   }
   return update;

@@ -1,6 +1,5 @@
 "use client";
 
-import { Eye, EyeOff, Lock, Trash2 } from "lucide-react";
 import { useMemo, useState, type FormEvent } from "react";
 import type { Influence, Memory, MemoryKind, MemoryRevision } from "@/contracts";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +9,7 @@ import { CheckboxField, Input, Textarea } from "@/components/ui/field";
 import { toast, UNDO_MS } from "@/components/ui/toaster";
 import { del, getJson, postJson } from "@/lib/fetcher";
 import { cn } from "@/lib/utils";
+import { MemoryRow } from "./memory-row";
 
 const KINDS: (MemoryKind | "all")[] = ["all", "episodic", "semantic", "procedural", "value", "goal"];
 // Fixed locale + UTC: identical on server and client (no hydration mismatch), and a "true since"
@@ -150,53 +150,18 @@ export function MemoriesView({ initialMemories, initialRevisions }: { initialMem
           <ul className="space-y-2">
             {visible.map((m) => (
               <li key={m.id}>
-                <Card className={cn("flex items-start justify-between gap-4 p-4", m.validTo && "opacity-60")}>
-                  <div className="min-w-0 space-y-1.5">
-                    <p className={cn("break-words text-[15px]", m.influence === "sealed" && "italic")}>{m.content}</p>
-                    <div className="flex flex-wrap items-center gap-1 text-xs text-muted">
-                      <Badge>{m.kind}</Badge>
-                      <Badge>{m.sourceType}</Badge>
-                      {m.influence !== "active" && <Badge tone={m.influence === "sealed" ? "twin" : "warning"}>{m.influence}</Badge>}
-                      <span className="tabular-nums">
-                        {fmt(m.validFrom)} → {m.validTo ? fmt(m.validTo) : "now"}
-                      </span>
-                      {m.supersededBy && <span>· replaced by a newer belief</span>}
-                    </div>
-                  </div>
-                  <div className="-my-1.5 -mr-1.5 flex shrink-0">
-                    {m.influence === "active" ? (
-                      <IconButton label="Mute (exclude from predictions)" onClick={() => setInfluence(m, "muted")}>
-                        <EyeOff className="size-[18px]" strokeWidth={1.8} aria-hidden />
-                      </IconButton>
-                    ) : (
-                      <IconButton label="Make active" onClick={() => setInfluence(m, "active")}>
-                        <Eye className="size-[18px]" strokeWidth={1.8} aria-hidden />
-                      </IconButton>
-                    )}
-                    {m.influence !== "sealed" && (
-                      <IconButton label="Seal (never sent to any model)" onClick={() => setInfluence(m, "sealed")}>
-                        <Lock className="size-[18px]" strokeWidth={1.8} aria-hidden />
-                      </IconButton>
-                    )}
-                    <IconButton label="Delete" onClick={() => remove(m)}>
-                      <Trash2 className="size-[18px]" strokeWidth={1.8} aria-hidden />
-                    </IconButton>
-                  </div>
-                </Card>
+                <MemoryRow
+                  memory={m}
+                  onToggleMute={() => void setInfluence(m, m.influence === "muted" ? "active" : "muted")}
+                  onSeal={() => void setInfluence(m, "sealed")}
+                  onDelete={() => remove(m)}
+                />
               </li>
             ))}
           </ul>
         )}
       </section>
     </div>
-  );
-}
-
-function IconButton({ label, onClick, children }: { label: string; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button type="button" onClick={onClick} title={label} aria-label={label} className="grid size-11 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-foreground">
-      {children}
-    </button>
   );
 }
 

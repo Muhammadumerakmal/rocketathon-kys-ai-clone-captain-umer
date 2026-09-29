@@ -4,6 +4,7 @@ import { isMock } from "@/lib/env";
 import { HttpError, withApi } from "@/lib/http";
 import { mockState } from "@/lib/mock/store";
 import { requireUser } from "@/lib/supabase/server";
+import { deleteChat, listChatItems } from "@/server/repos/chats";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,15 +19,7 @@ export const GET = withApi(async (_req: Request, { params }: { params: Promise<{
     return Response.json({ id: t.id, messages: t.messages });
   }
   const { supabase } = await requireUser();
-  const { data, error } = await supabase
-    .from("messages")
-    .select("item")
-    .eq("chat_id", id.data)
-    .order("id", { ascending: true })
-    .limit(200)
-    .returns<{ item: unknown }[]>();
-  if (error) throw error;
-  return Response.json({ id: id.data, messages: itemsToMessages(data.map((r) => r.item)) });
+  return Response.json({ id: id.data, messages: itemsToMessages(await listChatItems(supabase, id.data)) });
 });
 
 /** Delete a conversation and its messages (FK cascade). RLS scopes it to the owner. */
@@ -39,8 +32,6 @@ export const DELETE = withApi(async (_req: Request, { params }: { params: Promis
     return new Response(null, { status: 204 });
   }
   const { supabase } = await requireUser();
-  const { error, count } = await supabase.from("chats").delete({ count: "exact" }).eq("id", id.data);
-  if (error) throw error;
-  if (!count) throw new HttpError("not_found", "Conversation not found.");
+  if (!(await deleteChat(supabase, id.data))) throw new HttpError("not_found", "Conversation not found.");
   return new Response(null, { status: 204 });
 });

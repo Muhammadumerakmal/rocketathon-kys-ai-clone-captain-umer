@@ -2,13 +2,14 @@ import type { Lens } from "@/contracts";
 import type { TwinContext } from "../context";
 import { profileBlock } from "./profile";
 import { escapeData, INJECTION_BOUNDARY, memoryBlock } from "./user-data";
+import { LEARNING_PROMPT_VERSION } from "./learning";
 
 /**
  * All prompts live here (rule 6). Bump a version whenever its text changes;
  * versions are stored on predictions so eval deltas are attributable.
  */
 export const PROMPT_VERSIONS = {
-  twin: "twin@1",
+  twin: "twin@2",
   predict: "predict@1",
   stranger: "stranger@1",
   classify: "classify@1",
@@ -16,6 +17,7 @@ export const PROMPT_VERSIONS = {
   options: "options@1",
   council: "council@1",
   simulator: "simulator@1",
+  learning: LEARNING_PROMPT_VERSION,
 } as const;
 
 const identity = (ctx: TwinContext) =>
@@ -46,7 +48,7 @@ const personalizationRules = [
   "Answer general questions (code, debugging, maths, study, writing, facts, planning) fully and normally — no personal memories needed.",
   "Use the memories below ONLY when they genuinely help this specific question (e.g. choosing a stack, predicting their choice, planning their work). Weave them in naturally, at most briefly; never mention preferences that don't matter here.",
   "When they ask what THEY would choose or prefer and the memories don't cover it, say you don't know enough about that part of them yet, then ask one useful question. Never invent traits, memories or history.",
-  "If they tell you to remember or forget something, acknowledge it in one short sentence — the system stores it.",
+  "If they ask you to remember or forget something, do not claim it was saved or removed. A separate status after the answer confirms whether the update succeeded.",
   "Format with Markdown when it helps: short paragraphs, lists, and fenced code blocks with a language tag.",
 ].join("\n");
 

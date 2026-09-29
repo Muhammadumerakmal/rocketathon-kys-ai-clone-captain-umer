@@ -286,6 +286,23 @@ describe("learning twin (migration 0007)", () => {
     expect(current.map((r) => r.content)).toEqual(["I prefer Next.js for hackathons"]);
   });
 
+  it("replaces a learned preference atomically and links its history", async () => {
+    const [old] = await asUser(A, () => rows<{ id: string }>(
+      "insert into memories (user_id, content, kind, category, memory_key) values ($1, 'I prefer React', 'value', 'coding', 'atomic_framework') returning id",
+      [A],
+    ));
+    const args = [old!.id, "I prefer Vite", "Vite", "value", "conversation", 0.8, "coding", "atomic_framework", 0.8, "I prefer Vite", unit(14)];
+    const call = "select replace_learned_memory($1::uuid,$2,$3,$4,$5,$6::real,$7,$8,$9::real,$10,$11::extensions.halfvec) as id";
+    await expect(asUser(A, () => db.query(call, args.map((v, i) => i === 3 ? "invalid_kind" : v)))).rejects.toThrow();
+    const [stillCurrent] = await asUser(A, () => rows<{ valid_to: string | null }>("select valid_to from memories where id = $1", [old!.id]));
+    expect(stillCurrent!.valid_to).toBeNull();
+
+    const [created] = await asUser(A, () => rows<{ id: string }>(call, args));
+    const [history] = await asUser(A, () => rows<{ valid_to: string | null; superseded_by: string | null }>("select valid_to, superseded_by from memories where id = $1", [old!.id]));
+    expect(history!.valid_to).not.toBeNull();
+    expect(history!.superseded_by).toBe(created!.id);
+  });
+
   it("confidence moves in bounded steps, only on the caller's own memories", async () => {
     const [m] = await asUser(A, () => rows<{ id: string }>("select id from memories where memory_key = 'hackathon_frontend' and valid_to is null"));
     await asUser(A, () => db.query("select adjust_memory_confidence($1, 0.2)", [[m!.id]]));
@@ -301,6 +318,11 @@ describe("learning twin (migration 0007)", () => {
     await asUser(A, () => db.query("insert into message_feedback (user_id, answer_excerpt, rating, correction) values ($1, 'You would use Next.js', 'wrong', 'I prefer Vite')", [A]));
     expect(await asUser(A, () => rows("select id from message_feedback"))).toHaveLength(1);
     expect(await asUser(B, () => rows("select id from message_feedback"))).toHaveLength(0);
+  });
+
+  it("rejects feedback linked to another user's conversation", async () => {
+    const [chat] = await asUser(B, () => rows<{ id: string }>("insert into chats (user_id, title) values ($1, 'Private') returning id", [B]));
+    await expect(asUser(A, () => db.query("insert into message_feedback (user_id, chat_id, answer_excerpt, rating) values ($1, $2, 'x', 'wrong')", [A, chat!.id]))).rejects.toThrow(/row-level security/i);
   });
 
   it("rejects unknown categories and malformed keys", async () => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import type { EvidenceRef, MemorySuggestion, Prediction, PredictStreamEvent, StatusStep, TwinStreamEvent } from "@/contracts";
+import type { EvidenceRef, MemoryUpdate, Prediction, PredictStreamEvent, StatusStep, TwinStreamEvent, UsedMemory } from "@/contracts";
 import { createSseParser } from "./sse";
 
 /**
@@ -21,7 +21,10 @@ export type Turn =
       streaming: boolean;
       evidence?: EvidenceRef[];
       approval?: { proposalId: string; token: string; summary: string };
-      suggestions?: MemorySuggestion[];
+      usedMemories?: UsedMemory[];
+      memoryUpdate?: MemoryUpdate;
+      memoryError?: string;
+      chatId?: string;
       error?: string;
       asOf: string | null;
     }
@@ -97,6 +100,7 @@ export function useAsk() {
             switch (e.type) {
               case "meta":
                 setThreadId(e.chatId);
+                patch(replyId, (t) => ({ ...t, chatId: e.chatId }) as TwinTurn);
                 break;
               case "status":
                 patch(replyId, (t) => ({ ...t, status: { step: e.step, done: e.done, total: e.total } }));
@@ -110,8 +114,17 @@ export function useAsk() {
               case "approval_required":
                 patch(replyId, (t) => ({ ...t, approval: { proposalId: e.proposalId, token: e.token, summary: e.summary } }) as TwinTurn);
                 break;
-              case "memory_suggestion":
-                patch(replyId, (t) => ({ ...t, suggestions: e.suggestions }) as TwinTurn);
+              case "personalized":
+                patch(replyId, (t) => ({ ...t, usedMemories: e.memories }) as TwinTurn);
+                break;
+              case "memory_update":
+                patch(replyId, (t) => ({ ...t, memoryUpdate: e.update }) as TwinTurn);
+                break;
+              case "memory_update_failed":
+                patch(replyId, (t) => ({ ...t, memoryError: e.message }) as TwinTurn);
+                break;
+              case "answer_complete":
+                patch(replyId, (t) => ({ ...t, streaming: false, status: null }));
                 break;
               case "error":
                 patch(replyId, (t) => ({ ...t, error: e.message, status: null }));
@@ -150,10 +163,6 @@ export function useAsk() {
     }
   }, []);
 
-  const dismissSuggestion = useCallback((turnId: string, content: string) => {
-    patch(turnId, (t) => (t.kind === "chat" ? { ...t, suggestions: t.suggestions?.filter((s) => s.content !== content) } : t));
-  }, []);
-
   const loadThread = useCallback((id: string, messages: { role: "user" | "twin"; text: string }[]) => {
     setThreadId(id);
     setTurns(
@@ -173,5 +182,5 @@ export function useAsk() {
 
   const stop = useCallback(() => abort.current?.abort(), []);
 
-  return { turns, threadId, busy, send, retime, stop, reset, loadThread, dismissSuggestion };
+  return { turns, threadId, busy, send, retime, stop, reset, loadThread };
 }

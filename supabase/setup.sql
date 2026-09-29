@@ -708,6 +708,16 @@ create table public.message_feedback (
 );
 create index message_feedback_user on public.message_feedback (user_id, created_at desc);
 select public.enable_owner_rls('public.message_feedback', array['select','insert']);
+-- The generic owner policy checks feedback.user_id. The referenced conversation must
+-- also belong to that user; foreign keys alone do not enforce this relationship.
+create policy feedback_chat_owner on public.message_feedback as restrictive
+  for insert to authenticated
+  with check (
+    chat_id is null or exists (
+      select 1 from public.chats c
+      where c.id = chat_id and c.user_id = (select auth.uid())
+    )
+  );
 
 -- ---------------------------------------------------------------------------
 -- Retrieval v2: relevance-gated (min_similarity) + confidence/category returned.
@@ -792,6 +802,56 @@ $$;
 
 revoke all on function public.adjust_memory_confidence(uuid[], real) from public, anon;
 grant execute on function public.adjust_memory_confidence(uuid[], real) to authenticated;
+
+-- Close the old value, insert its replacement and link history in one transaction.
+-- A failed insert rolls the close back, preserving the current belief.
+create or replace function public.replace_learned_memory(
+  p_old_id uuid,
+  p_content text,
+  p_summary text,
+  p_kind text,
+  p_source_type text,
+  p_importance real,
+  p_category text,
+  p_memory_key text,
+  p_confidence real,
+  p_evidence text,
+  p_embedding extensions.halfvec(1536)
+) returns uuid
+language plpgsql security invoker
+set search_path = ''
+as $$
+declare
+  new_id uuid := gen_random_uuid();
+  closed_at timestamptz := now();
+begin
+  update public.memories
+     set valid_to = closed_at
+   where id = p_old_id
+     and user_id = (select auth.uid())
+     and category = p_category
+     and memory_key = p_memory_key
+     and influence <> 'sealed'
+     and valid_to is null
+     and valid_from <= closed_at;
+  if not found then
+    raise exception 'current memory not found' using errcode = 'P0002';
+  end if;
+
+  insert into public.memories (id, user_id, content, summary, kind, source_type,
+                              importance, category, memory_key, confidence, evidence,
+                              embedding, valid_from)
+  values (new_id, (select auth.uid()), p_content, p_summary, p_kind, p_source_type,
+          p_importance, p_category, p_memory_key, p_confidence, p_evidence,
+          p_embedding, closed_at);
+
+  update public.memories set superseded_by = new_id where id = p_old_id;
+  return new_id;
+end;
+$$;
+
+revoke all on function public.replace_learned_memory(uuid,text,text,text,text,real,text,text,real,text,extensions.halfvec) from public, anon;
+grant execute on function public.replace_learned_memory(uuid,text,text,text,text,real,text,text,real,text,extensions.halfvec) to authenticated;
 
 -- ===== seed.sql =====
 -- TwinOS v2 · seed: Decision DNA question bank (plan §9.3, §11.5)

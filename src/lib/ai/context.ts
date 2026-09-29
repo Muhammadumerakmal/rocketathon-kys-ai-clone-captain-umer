@@ -116,16 +116,3 @@ export async function buildTwinContext(
     contradicted,
   };
 }
-
-/** The user's current preference keys (coding.preferred_language, …) so the learner reuses them. */
-export async function knownPreferenceKeys(sb: SupabaseClient, limit = 60): Promise<string[]> {
-  const { data, error } = await sb
-    .from("memories")
-    .select("category,memory_key")
-    .not("memory_key", "is", null)
-    .is("valid_to", null)
-    .limit(limit)
-    .returns<{ category: string; memory_key: string }[]>();
-  if (error) return [];
-  return [...new Set(data.map((r) => `${r.category}.${r.memory_key}`))];
-}

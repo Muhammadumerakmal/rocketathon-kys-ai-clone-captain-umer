@@ -69,6 +69,29 @@ body {
   line-height: 1.5;
 }
 
+/* Twin replies are Markdown; these rules stay scoped to model text. */
+.twin-markdown > :first-child { margin-top: 0; }
+.twin-markdown > :last-child { margin-bottom: 0; }
+.twin-markdown p, .twin-markdown ul, .twin-markdown ol, .twin-markdown pre,
+.twin-markdown blockquote, .twin-markdown table { margin-block: 0.65rem; }
+.twin-markdown h1, .twin-markdown h2, .twin-markdown h3 { margin-block: 1rem 0.4rem; font-weight: 700; }
+.twin-markdown h1 { font-size: 1.35em; }
+.twin-markdown h2 { font-size: 1.2em; }
+.twin-markdown ul { list-style: disc; padding-left: 1.5rem; }
+.twin-markdown ol { list-style: decimal; padding-left: 1.5rem; }
+.twin-markdown li { margin-block: 0.2rem; }
+.twin-markdown a { color: var(--twin-ink); text-decoration: underline; text-underline-offset: 2px; }
+.twin-markdown blockquote { border-left: 3px solid var(--line); padding-left: 0.9rem; color: var(--ink-2); }
+.twin-markdown code { border-radius: 0.25rem; background: var(--paper-2); padding: 0.1rem 0.25rem; font-family: var(--font-mono); font-size: 0.9em; }
+.twin-markdown pre { max-width: 100%; overflow-x: auto; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--paper-2); padding: 0.9rem; }
+.twin-markdown pre code { background: transparent; padding: 0; font-size: 0.85em; }
+.twin-markdown .hljs-keyword, .twin-markdown .hljs-selector-tag { color: var(--twin-ink); }
+.twin-markdown .hljs-string, .twin-markdown .hljs-literal { color: var(--ok); }
+.twin-markdown .hljs-comment { color: var(--ink-3); }
+.twin-markdown table { display: block; max-width: 100%; overflow-x: auto; border-collapse: collapse; }
+.twin-markdown th, .twin-markdown td { border: 1px solid var(--line); padding: 0.35rem 0.6rem; text-align: left; }
+.twin-markdown th { background: var(--paper-2); }
+
 /* No double-tap-zoom delay on controls. */
 a,
 button,

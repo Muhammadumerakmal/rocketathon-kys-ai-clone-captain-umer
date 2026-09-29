@@ -1,7 +1,7 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import type { AnswerFeedbackRequest, Memory, MemoryUpdate, PredictRequest, PredictStreamEvent, TwinChatRequest, TwinStreamEvent } from "@/contracts";
-import { CONFIDENCE, heuristicLearning, planUpsert, sourceFor, validateSignals } from "@/lib/ai/learning";
+import { CONFIDENCE, heuristicLearning, isExplicitForgetRequest, isExplicitMemoryRequest, planUpsert, selectForgetMatches, sourceFor, validateSignals } from "@/lib/ai/learning";
 import { sseResponse } from "@/lib/ai/stream";
 import { sleep } from "@/lib/http";
 import { mockProposalStream, NOT_CONNECTED, wantsScheduling } from "./connectors";
@@ -28,7 +28,7 @@ export function mockRelevant(message: string, memories: readonly Memory[], limit
 export function mockApplyLearning(message: string, via: "conversation" | "feedback"): MemoryUpdate {
   const s = mockState();
   const learning = heuristicLearning(message);
-  const update: MemoryUpdate = { explicit: via === "feedback" || learning.forget.length > 0, saved: [], reinforced: [], replaced: [], forgotten: [] };
+  const update: MemoryUpdate = { explicit: via === "feedback" || (learning.forget.length > 0 && isExplicitForgetRequest(message)), saved: [], reinforced: [], replaced: [], forgotten: [] };
   for (const signal of validateSignals(learning.signals)) {
     update.explicit ||= signal.explicit;
     const existing = s.memories.find((m) => m.category === signal.category && m.key === signal.key && m.validTo === null && m.influence !== "sealed");
@@ -66,8 +66,9 @@ export function mockApplyLearning(message: string, via: "conversation" | "feedba
     } else update.saved.push(signal.statement);
     s.memories.unshift(memory);
   }
-  for (const what of learning.forget) {
-    for (const m of mockRelevant(what, s.memories, 2)) {
+  for (const what of isExplicitForgetRequest(message) ? learning.forget : []) {
+    const hits = mockRelevant(what, s.memories, 3).map((m) => ({ ...m, memory_key: m.key, similarity: 1 }));
+    for (const m of selectForgetMatches(what, hits)) {
       s.memories = s.memories.filter((x) => x.id !== m.id);
       update.forgotten.push(m.content);
     }
@@ -113,10 +114,13 @@ export function mockChat(body: TwinChatRequest): Response {
       }
     }
     t.messages.push({ role: "twin", text: reply });
+    send({ type: "answer_complete" });
 
     const update = mockApplyLearning(body.message, "conversation");
     if (update.explicit && (update.saved.length || update.replaced.length || update.forgotten.length || update.reinforced.length)) {
       send({ type: "memory_update", update });
+    } else if (isExplicitMemoryRequest(body.message)) {
+      send({ type: "memory_update_failed", message: "I couldn't confirm a memory update. Try again or use Memories." });
     }
   });
 }
