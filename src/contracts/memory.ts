@@ -15,7 +15,7 @@ export type RevisionVerdict = z.infer<typeof RevisionVerdict>;
 export const RevisionResolution = z.enum(["update", "both_true", "old_wrong"]);
 export type RevisionResolution = z.infer<typeof RevisionResolution>;
 
-export const MemorySource = z.enum(["manual", "quiz", "feedback", "outcome", "import", "connector"]);
+export const MemorySource = z.enum(["manual", "quiz", "training", "conversation", "explicit", "feedback", "outcome", "import", "connector"]);
 export type MemorySource = z.infer<typeof MemorySource>;
 
 export const Memory = z.object({
@@ -30,6 +30,10 @@ export const Memory = z.object({
   recordedAt: IsoDateTime,
   supersededBy: Uuid.nullable(),
   influence: Influence,
+  category: z.lazy(() => MemoryCategory).default("other"),
+  key: z.string().nullable().default(null),
+  /** 0..1 — rises with repetition/confirmation, falls with contradiction (spec §7) */
+  confidence: z.number().min(0).max(1).default(0.6),
 });
 export type Memory = z.infer<typeof Memory>;
 
@@ -88,6 +92,64 @@ export const ResolveRevisionRequest = z.object({
     .optional(),
 });
 export type ResolveRevisionRequest = z.infer<typeof ResolveRevisionRequest>;
+
+/** What part of life a memory is about (Human AI Twin spec §18). Mirrors the DB check. */
+export const MemoryCategory = z.enum([
+  "coding",
+  "career",
+  "study",
+  "goals",
+  "food",
+  "travel",
+  "communication",
+  "work_style",
+  "entertainment",
+  "health",
+  "money",
+  "relationships",
+  "other",
+]);
+export type MemoryCategory = z.infer<typeof MemoryCategory>;
+
+/** snake_case key, e.g. "hackathon_frontend" — one current value per (category, key). */
+export const MemoryKey = z.string().regex(/^[a-z0-9_]{2,60}$/);
+
+/**
+ * Model-facing: what one user message teaches the twin (spec §5–§8, §26). Validated
+ * server-side before anything touches the database — never inserted blindly.
+ * durability separates "I want pizza today" (temporary) from "I generally love spicy food".
+ */
+export const ModelLearning = z.object({
+  signals: z
+    .array(
+      z.object({
+        category: MemoryCategory,
+        key: z.string().max(60),
+        value: z.string().max(120),
+        /** first-person sentence, e.g. "For hackathons I prefer Vite because it's faster." */
+        statement: z.string().max(200),
+        kind: MemoryKind,
+        durability: z.enum(["temporary", "long_term"]),
+        /** explicit = "remember that…"/"I always…"; stated = plain first-person claim; inferred = implied */
+        strength: z.enum(["explicit", "stated", "inferred"]),
+      }),
+    )
+    .max(3),
+  /** "Forget my React preference" → short descriptions of what to remove */
+  forget: z.array(z.string().max(200)).max(3),
+});
+export type ModelLearning = z.infer<typeof ModelLearning>;
+export type LearnedSignal = ModelLearning["signals"][number];
+
+/** What changed in the twin after a message — shown only when it matters (spec §29). */
+export const MemoryUpdate = z.object({
+  explicit: z.boolean(),
+  saved: z.array(z.string()),
+  reinforced: z.array(z.string()),
+  replaced: z.array(z.object({ from: z.string(), to: z.string() })),
+  forgotten: z.array(z.string()),
+});
+export type MemoryUpdate = z.infer<typeof MemoryUpdate>;
 
 // ---- Model-facing schemas (strict structured outputs: no optionals, no records) ----
 

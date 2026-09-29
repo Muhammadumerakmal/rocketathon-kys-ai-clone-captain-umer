@@ -28,3 +28,19 @@ export const GET = withApi(async (_req: Request, { params }: { params: Promise<{
   if (error) throw error;
   return Response.json({ id: id.data, messages: itemsToMessages(data.map((r) => r.item)) });
 });
+
+/** Delete a conversation and its messages (FK cascade). RLS scopes it to the owner. */
+export const DELETE = withApi(async (_req: Request, { params }: { params: Promise<{ id: string }> }) => {
+  const id = Uuid.safeParse((await params).id);
+  if (!id.success) throw new HttpError("bad_request", "Invalid thread id.");
+  if (isMock()) {
+    const s = mockState();
+    s.threads = s.threads.filter((t) => t.id !== id.data);
+    return new Response(null, { status: 204 });
+  }
+  const { supabase } = await requireUser();
+  const { error, count } = await supabase.from("chats").delete({ count: "exact" }).eq("id", id.data);
+  if (error) throw error;
+  if (!count) throw new HttpError("not_found", "Conversation not found.");
+  return new Response(null, { status: 204 });
+});

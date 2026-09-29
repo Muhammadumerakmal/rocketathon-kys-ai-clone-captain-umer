@@ -16,6 +16,9 @@ const row: MemoryRow = {
   recorded_at: "2026-09-29 08:00:00.123+00",
   superseded_by: null,
   influence: "active",
+  category: "work_style",
+  memory_key: "best_time_of_day",
+  confidence: 0.8,
 };
 
 describe("rowToMemory", () => {

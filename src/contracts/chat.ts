@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { IsoDateTime, Uuid } from "./common";
-import { MemoryKind } from "./memory";
+import { MemoryCategory, MemoryUpdate } from "./memory";
 import { EvidenceRef, Prediction } from "./prediction";
 
 export const TwinChatRequest = z.object({
@@ -10,17 +10,24 @@ export const TwinChatRequest = z.object({
 });
 export type TwinChatRequest = z.infer<typeof TwinChatRequest>;
 
-/** A durable fact the twin noticed in chat. Proposed only — saved when the user taps Save. */
-export const MemorySuggestion = z.object({
-  content: z.string().min(3).max(300),
-  kind: MemoryKind,
+/** A memory that actually informed an answer — shown behind "Personalized using your Twin" (spec §30). */
+export const UsedMemory = z.object({
+  id: Uuid,
+  label: z.string().max(140),
+  category: MemoryCategory,
+  confidence: z.number().min(0).max(1),
 });
-export type MemorySuggestion = z.infer<typeof MemorySuggestion>;
+export type UsedMemory = z.infer<typeof UsedMemory>;
 
-/** Model-facing: extract 0–2 durable first-person facts from one user message. */
-export const ModelMemorySuggestions = z.object({
-  suggestions: z.array(MemorySuggestion).max(2),
+/** Feedback on a personalized answer (spec §9): Exactly / Mostly right / Wrong (+ correction). */
+export const AnswerFeedbackRequest = z.object({
+  chatId: Uuid.nullable().default(null),
+  answerExcerpt: z.string().min(1).max(1000),
+  rating: z.enum(["exactly", "mostly", "wrong"]),
+  correction: z.string().trim().max(1000).optional(),
+  memoryIds: z.array(Uuid).max(12).default([]),
 });
+export type AnswerFeedbackRequest = z.infer<typeof AnswerFeedbackRequest>;
 
 /** Real pipeline steps, never timers (UI/UX plan §6.4). */
 export const StatusStep = z.enum(["retrieving", "sampling", "baseline"]);
@@ -45,7 +52,8 @@ export const TwinStreamEvent = z.discriminatedUnion("type", [
     token: z.string(),
     summary: z.string(),
   }),
-  z.object({ type: z.literal("memory_suggestion"), suggestions: z.array(MemorySuggestion).min(1).max(2) }),
+  z.object({ type: z.literal("personalized"), memories: z.array(UsedMemory).min(1).max(12) }),
+  z.object({ type: z.literal("memory_update"), update: MemoryUpdate }),
   z.object({ type: z.literal("error"), code: z.string(), message: z.string() }),
   z.object({ type: z.literal("done") }),
 ]);

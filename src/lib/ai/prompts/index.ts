@@ -22,10 +22,6 @@ const identity = (ctx: TwinContext) =>
   `You are TwinOS, an AI model of ${escapeData(ctx.twinName)}'s stated patterns. You are NOT ${escapeData(ctx.twinName)} and never claim to be. ` +
   "The user is always the final decision-maker.";
 
-const honesty =
-  "Speak as \"Based on what you've told me…\". If the evidence below is thin or unrelated, say \"I don't know you well enough on this yet\" " +
-  "and ask one question that would help. Never invent memories, events, people or preferences that are not in <user_data>.";
-
 const timeframe = (ctx: TwinContext) =>
   ctx.asOf
     ? `TIME-TRAVEL MODE: answer as the user was on ${ctx.asOf.slice(0, 10)}. Only the memories below were true then.`
@@ -36,18 +32,36 @@ const scheduling = (now: Date) =>
   `Current time: ${now.toISOString()} (UTC). Use ISO 8601 with a Z offset for start. ` +
   "The user must approve every proposal — never say an event exists until it's approved.";
 
+/**
+ * Ask (Human AI Twin spec §3–§4, §27–§29): a capable general assistant FIRST — coding,
+ * debugging, study, maths, writing, planning — that personalizes only when the user's own
+ * memories are relevant. Retrieval is relevance-gated, so an empty <user_data> block means
+ * "answer normally", not "refuse".
+ */
+const assistant = (ctx: TwinContext) =>
+  `You are ${escapeData(ctx.twinName)}'s TwinOS assistant: a capable general AI assistant that also learns how ${escapeData(ctx.twinName)} thinks. ` +
+  `You are NOT ${escapeData(ctx.twinName)} and never claim to be; they make their own decisions.`;
+
+const personalizationRules = [
+  "Answer general questions (code, debugging, maths, study, writing, facts, planning) fully and normally — no personal memories needed.",
+  "Use the memories below ONLY when they genuinely help this specific question (e.g. choosing a stack, predicting their choice, planning their work). Weave them in naturally, at most briefly; never mention preferences that don't matter here.",
+  "When they ask what THEY would choose or prefer and the memories don't cover it, say you don't know enough about that part of them yet, then ask one useful question. Never invent traits, memories or history.",
+  "If they tell you to remember or forget something, acknowledge it in one short sentence — the system stores it.",
+  "Format with Markdown when it helps: short paragraphs, lists, and fenced code blocks with a language tag.",
+].join("\n");
+
 /** Layers 1–5 of plan §11.1. Conversation history is added by the Session. */
 export function twinInstructions(ctx: TwinContext, opts: { canSchedule?: boolean; now?: Date } = {}): string {
+  const hasMemories = ctx.memories.length > 0;
   return [
-    identity(ctx),
-    honesty,
+    assistant(ctx),
+    personalizationRules,
     INJECTION_BOUNDARY,
     timeframe(ctx),
     opts.canSchedule ? scheduling(opts.now ?? new Date()) : "",
-    profileBlock(ctx.profile),
-    "Relevant memories (most relevant first):",
-    memoryBlock(ctx.memories),
-    "Keep answers short and concrete. When you rely on a memory, paraphrase it; don't quote ids.",
+    hasMemories ? profileBlock(ctx.profile) : "",
+    hasMemories ? "What you know about them that may be relevant here (most relevant first):" : "No stored memories are relevant to this message — answer it on its own merits.",
+    hasMemories ? memoryBlock(ctx.memories) : "",
   ]
     .filter(Boolean)
     .join("\n\n");

@@ -37,6 +37,9 @@ export const POST = withApi(async (req: Request) => {
       recordedAt: now,
       supersededBy: null,
       influence: body.influence,
+      category: "other",
+      key: null,
+      confidence: 0.6,
     };
     mockState().memories.unshift(memory);
     return Response.json({ memory, duplicateOf: null, contradictions: 0, sensitive: false, flaggedInjection: false }, { status: 201 });

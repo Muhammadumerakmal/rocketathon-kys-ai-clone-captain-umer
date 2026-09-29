@@ -64,3 +64,17 @@ describe("rankMemories", () => {
     expect(rankMemories([], NOW)).toEqual([]);
   });
 });
+
+describe("rankMemories — confidence and source (Human AI Twin spec §7, §11)", () => {
+  const base = { rrfScore: 0.03, importance: 0.5, kind: "value" as const, validFrom: NOW };
+
+  it("a confident memory outranks an otherwise identical unsure one", () => {
+    const [top] = rankMemories([{ ...base, id: "unsure", confidence: 0.3 }, { ...base, id: "sure", confidence: 0.95 }], NOW);
+    expect(top!.id).toBe("sure");
+  });
+
+  it("explicit statements and corrections outrank inferred ones", () => {
+    const [top] = rankMemories([{ ...base, id: "inferred", source: "conversation" }, { ...base, id: "explicit", source: "explicit" }], NOW);
+    expect(top!.id).toBe("explicit");
+  });
+});

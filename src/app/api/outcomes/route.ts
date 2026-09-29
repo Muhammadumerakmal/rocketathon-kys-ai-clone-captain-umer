@@ -37,6 +37,9 @@ export const POST = withApi(async (req: Request) => {
       recordedAt: new Date().toISOString(),
       supersededBy: null,
       influence: "active",
+      category: "other",
+      key: null,
+      confidence: 0.6,
     });
     return Response.json({ ok: true });
   }

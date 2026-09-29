@@ -1,5 +1,5 @@
 import "server-only";
-import type { EvidenceRef, EvidenceType, Influence, MemoryKind } from "@/contracts";
+import type { EvidenceRef, EvidenceType, Influence, MemoryCategory, MemoryKind } from "@/contracts";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { goalsForTwin } from "@/server/repos/goals";
 import { matchMemories } from "@/server/repos/memories";
@@ -14,6 +14,8 @@ import { rankMemories } from "./ranking";
 export interface ContextMemory {
   id: string;
   kind: MemoryKind;
+  category?: MemoryCategory;
+  confidence?: number;
   content: string;
   validFrom: string;
   importance: number;
@@ -56,7 +58,7 @@ export function promptSafeMemories<T extends ContextMemory & { influence?: Influ
     if (m.influence !== undefined && m.influence !== "active") continue;
     if (used + m.content.length > MAX_CONTEXT_CHARS) break;
     used += m.content.length;
-    out.push({ id: m.id, kind: m.kind, content: m.content, validFrom: m.validFrom, importance: m.importance, relevance: m.relevance });
+    out.push({ id: m.id, kind: m.kind, category: m.category, confidence: m.confidence, content: m.content, validFrom: m.validFrom, importance: m.importance, relevance: m.relevance });
   }
   return out;
 }
@@ -82,6 +84,8 @@ export async function buildTwinContext(
       importance: r.importance,
       kind: r.kind,
       validFrom: new Date(r.valid_from),
+      confidence: r.confidence,
+      source: r.source_type,
     })),
     asOf ? new Date(asOf) : new Date(),
   );
@@ -92,6 +96,8 @@ export async function buildTwinContext(
       return {
         id: r.id,
         kind: r.kind,
+        category: row.category,
+        confidence: row.confidence,
         content: row.context_qualifier ? `${row.content} (${row.context_qualifier})` : row.content,
         validFrom: new Date(row.valid_from).toISOString(),
         importance: r.importance,
@@ -109,4 +115,17 @@ export async function buildTwinContext(
     profile: { stated: traits.stated, revealed: traits.revealed, goals },
     contradicted,
   };
+}
+
+/** The user's current preference keys (coding.preferred_language, …) so the learner reuses them. */
+export async function knownPreferenceKeys(sb: SupabaseClient, limit = 60): Promise<string[]> {
+  const { data, error } = await sb
+    .from("memories")
+    .select("category,memory_key")
+    .not("memory_key", "is", null)
+    .is("valid_to", null)
+    .limit(limit)
+    .returns<{ category: string; memory_key: string }[]>();
+  if (error) return [];
+  return [...new Set(data.map((r) => `${r.category}.${r.memory_key}`))];
 }

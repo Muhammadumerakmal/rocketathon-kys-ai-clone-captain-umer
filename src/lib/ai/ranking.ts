@@ -1,4 +1,4 @@
-import type { MemoryKind } from "@/contracts";
+import type { MemoryKind, MemorySource } from "@/contracts";
 
 /**
  * App-side ranking on top of the `match_memories` RRF score (plan §9.2):
@@ -40,12 +40,21 @@ export interface RankInput {
   importance: number;
   kind: MemoryKind;
   validFrom: Date;
+  /** 0..1 — how sure the twin is about this memory (Human AI Twin spec §7). Default 1. */
+  confidence?: number;
+  /** where it came from: explicit statements and corrections outrank inferences (spec §11) */
+  source?: MemorySource;
 }
 
 export interface Ranked extends RankInput {
   score: number;
   /** score normalized to 0..1 against the best hit — used as EvidenceRef.relevance */
   relevance: number;
+}
+
+/** Explicit statements and corrections carry more weight than inferred ones. */
+export function sourceWeight(source: MemorySource | undefined): number {
+  return source === "explicit" || source === "feedback" ? 1.15 : 1;
 }
 
 /**
@@ -55,7 +64,12 @@ export interface Ranked extends RankInput {
 export function rankMemories(items: readonly RankInput[], now = new Date()): Ranked[] {
   const scored = items.map((m) => ({
     ...m,
-    score: m.rrfScore * (0.7 + 0.3 * m.importance) * recencyDecay(m.validFrom, m.kind, { now }),
+    score:
+      m.rrfScore *
+      (0.7 + 0.3 * m.importance) *
+      recencyDecay(m.validFrom, m.kind, { now }) *
+      (0.5 + 0.5 * (m.confidence ?? 1)) *
+      sourceWeight(m.source),
   }));
   const max = Math.max(0, ...scored.map((s) => s.score));
   return scored
