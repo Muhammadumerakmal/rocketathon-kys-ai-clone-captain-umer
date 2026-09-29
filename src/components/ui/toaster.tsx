@@ -20,10 +20,13 @@ export function Toaster() {
   );
 }
 
+/** How long a reversible action waits before it's committed — the toast's lifetime. */
+export const UNDO_MS = 4200;
+
 export const toast = {
   info: (message: string) => sonnerToast(message, { duration: 2200 }),
   error: (message: string) => sonnerToast.error(message, { duration: 4200 }),
   /** A reversible action: the Undo window is the toast's lifetime. */
   undoable: (message: string, onUndo: () => void) =>
-    sonnerToast(message, { duration: 4200, action: { label: "Undo", onClick: onUndo } }),
+    sonnerToast(message, { duration: UNDO_MS, action: { label: "Undo", onClick: onUndo } }),
 };

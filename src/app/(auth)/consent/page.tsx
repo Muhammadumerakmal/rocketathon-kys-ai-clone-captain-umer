@@ -21,8 +21,8 @@ export default async function ConsentPage() {
 
   return (
     <main className="mx-auto max-w-xl px-4 py-12">
-      <h1 className="text-2xl font-semibold tracking-tight">Before we start</h1>
-      <p className="mt-2 text-sm text-muted">Here&apos;s exactly what TwinOS does with your data.</p>
+      <h1 className="font-display text-[clamp(30px,8vw,40px)] font-extrabold leading-[1.05]">Before we start</h1>
+      <p className="mt-2 text-[15px] text-muted">Here&apos;s exactly what TwinOS does with your data.</p>
       <Card className="mt-6 space-y-4">
         <dl className="space-y-3">
           {POINTS.map(([title, body]) => (

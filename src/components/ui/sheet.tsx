@@ -1,7 +1,7 @@
 "use client";
 
 import { X } from "lucide-react";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 /**
@@ -22,6 +22,7 @@ export function BottomSheet({
   className?: string;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const titleId = useId(); // unique per sheet, so two sheets never share a label
 
   useEffect(() => {
     const d = ref.current;
@@ -35,7 +36,7 @@ export function BottomSheet({
       ref={ref}
       onClose={onClose}
       onClick={(e) => e.target === ref.current && onClose()} // click on the backdrop
-      aria-labelledby="sheet-title"
+      aria-labelledby={titleId}
       className={cn(
         "m-0 mt-auto w-full max-w-none rounded-t-[var(--r-lg)] border border-line bg-surface p-0 text-foreground shadow-[var(--shadow)]",
         "backdrop:bg-ink/30 backdrop:backdrop-blur-[2px]",
@@ -45,11 +46,11 @@ export function BottomSheet({
       )}
     >
       <div className="flex items-center justify-between px-5 pb-2 pt-4">
-        <h2 id="sheet-title" className="font-display text-xl font-bold">
+        <h2 id={titleId} className="font-display text-xl font-bold">
           {title}
         </h2>
-        <button type="button" onClick={onClose} className="grid size-11 place-items-center rounded-full text-muted hover:bg-surface-2" aria-label="Close">
-          <X className="size-5" strokeWidth={1.8} />
+        <button type="button" onClick={onClose} className="grid size-11 place-items-center rounded-full text-muted hover:bg-surface-2 hover:text-foreground" aria-label="Close">
+          <X className="size-5" strokeWidth={1.8} aria-hidden />
         </button>
       </div>
       <div className="pb-safe px-5 pb-5">{children}</div>

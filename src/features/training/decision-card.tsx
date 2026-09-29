@@ -65,7 +65,7 @@ export const DecisionCard = forwardRef<DecisionCardHandle, Props>(function Decis
 
   return (
     <m.article
-      className="absolute inset-0 flex cursor-grab touch-pan-y flex-col rounded-[var(--r-lg)] border border-line bg-surface p-6 shadow-[var(--shadow)] active:cursor-grabbing"
+      className="absolute inset-0 flex cursor-grab touch-pan-y select-none flex-col rounded-[var(--r-lg)] border border-line bg-surface p-6 shadow-[var(--shadow)] active:cursor-grabbing"
       style={{ x, rotate, opacity }}
       drag="x"
       dragConstraints={{ left: -RUBBER_BAND_AT, right: RUBBER_BAND_AT }}
@@ -85,7 +85,7 @@ export const DecisionCard = forwardRef<DecisionCardHandle, Props>(function Decis
             type="button"
             onPointerDown={(e) => e.stopPropagation()} // taps shouldn't start a drag
             onClick={() => void choose(o.id, dirForOption(o.id))}
-            className="flex min-h-12 items-center gap-3 rounded-[var(--r-md)] border border-line px-4 text-left text-[15px] font-medium hover:border-ink hover:bg-surface-2"
+            className="flex min-h-12 items-center gap-3 rounded-[var(--r-md)] border border-line px-4 py-2 text-left text-[15px] font-medium transition-[border-color,background-color] duration-150 hover:border-ink hover:bg-surface-2"
           >
             <kbd className="grid size-6 place-items-center rounded-md border border-line text-xs text-faint">{i + 1}</kbd>
             {o.label}

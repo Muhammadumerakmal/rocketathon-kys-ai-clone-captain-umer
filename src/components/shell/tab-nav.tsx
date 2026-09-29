@@ -69,9 +69,10 @@ export function TabNav({ orientation, badge }: { orientation: "horizontal" | "ve
           >
             <span className="relative">
               <Icon className={horizontal ? "size-5" : "size-[18px]"} strokeWidth={1.8} aria-hidden />
-              {badge?.[href] && <span className="absolute -right-1 -top-0.5 size-2 rounded-full bg-twin ring-2 ring-surface" aria-label="needs attention" />}
+              {badge?.[href] && <span className="absolute -right-1 -top-0.5 size-2 rounded-full bg-twin ring-2 ring-surface" aria-hidden />}
             </span>
             {label}
+            {badge?.[href] && <span className="sr-only">(needs attention)</span>}
           </Link>
         );
       })}

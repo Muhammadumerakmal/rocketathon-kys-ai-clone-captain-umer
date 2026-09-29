@@ -63,7 +63,10 @@ export function SwipeDeck({ initial }: { initial: TrainingProgress }) {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (!current || (e.target as HTMLElement)?.closest("input,textarea,select")) return;
+      // Ctrl/⌘+1 switches browser tabs, and the tab bar handles its own arrows (it calls
+      // preventDefault) — neither should answer a card.
+      if (!current || e.defaultPrevented || e.ctrlKey || e.metaKey || e.altKey) return;
+      if ((e.target as HTMLElement)?.closest("input,textarea,select,[contenteditable],nav,dialog")) return;
       if (e.key === "ArrowLeft") top.current?.chooseDirection(-1);
       else if (e.key === "ArrowRight") top.current?.chooseDirection(1);
       else {

@@ -30,6 +30,9 @@ export function AppShell({
 
   return (
     <div className="min-h-dvh min-[920px]:grid min-[920px]:grid-cols-[15rem_1fr]">
+      <a href="#main" className="skip-link">
+        Skip to content
+      </a>
       <OrbSync readiness={readiness} />
 
       {/* Desktop rail */}
@@ -76,7 +79,7 @@ export function AppShell({
           <div className="flex items-center">
             <ThemeToggle />
             <details className="relative">
-              <summary className="grid size-11 cursor-pointer list-none place-items-center rounded-full text-muted hover:bg-surface-2" aria-label="More">
+              <summary className="grid size-11 cursor-pointer list-none place-items-center rounded-full text-muted hover:bg-surface-2 hover:text-foreground [&::-webkit-details-marker]:hidden" aria-label="More">
                 <Menu className="size-5" strokeWidth={1.8} aria-hidden />
               </summary>
               <div className="absolute right-0 top-12 w-52 rounded-[var(--r-md)] border border-line bg-surface p-1.5 shadow-[var(--shadow)]">
@@ -97,7 +100,7 @@ export function AppShell({
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-5xl flex-1 px-[18px] pb-28 pt-4 min-[920px]:px-10 min-[920px]:pb-10 min-[920px]:pt-8">
+        <main id="main" tabIndex={-1} className="outline-none mx-auto w-full max-w-5xl flex-1 px-[18px] pb-28 pt-4 min-[920px]:px-10 min-[920px]:pb-10 min-[920px]:pt-8">
           {children}
         </main>
         <AiDisclosure className="px-[18px] pb-24 min-[920px]:pb-6" />

@@ -6,6 +6,7 @@ import type { Reversibility, SimulatedOption, Simulation } from "@/contracts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { Input, Textarea } from "@/components/ui/field";
 import { postJson } from "@/lib/fetcher";
 
 const DOOR: Record<Reversibility, { label: string; tone: "success" | "warning" | "danger"; hint: string }> = {
@@ -38,23 +39,21 @@ export function SimulatorView() {
     }
   }
 
-  const input = "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm";
-
   return (
     <div className="space-y-6">
       <Card>
         <form onSubmit={submit} className="grid gap-3 sm:grid-cols-2">
-          <label className="text-sm font-medium">
+          <label className="text-sm font-semibold">
             Option A
-            <input required minLength={2} maxLength={300} value={form.optionA} onChange={(e) => setForm({ ...form, optionA: e.target.value })} className={`${input} mt-1`} placeholder="Paid safe job" />
+            <Input name="optionA" autoComplete="off" required minLength={2} maxLength={300} value={form.optionA} onChange={(e) => setForm({ ...form, optionA: e.target.value })} className="mt-1.5 font-normal" placeholder="e.g. Paid safe job…" />
           </label>
-          <label className="text-sm font-medium">
+          <label className="text-sm font-semibold">
             Option B
-            <input required minLength={2} maxLength={300} value={form.optionB} onChange={(e) => setForm({ ...form, optionB: e.target.value })} className={`${input} mt-1`} placeholder="Unpaid dream internship" />
+            <Input name="optionB" autoComplete="off" required minLength={2} maxLength={300} value={form.optionB} onChange={(e) => setForm({ ...form, optionB: e.target.value })} className="mt-1.5 font-normal" placeholder="e.g. Unpaid dream internship…" />
           </label>
-          <label className="text-sm font-medium sm:col-span-2">
-            Context (optional)
-            <textarea maxLength={1000} rows={2} value={form.context} onChange={(e) => setForm({ ...form, context: e.target.value })} className={`${input} mt-1`} />
+          <label className="text-sm font-semibold sm:col-span-2">
+            Context <span className="font-normal text-muted">(optional)</span>
+            <Textarea name="context" autoComplete="off" maxLength={1000} rows={2} value={form.context} onChange={(e) => setForm({ ...form, context: e.target.value })} className="mt-1.5 font-normal" placeholder="e.g. I have 4 months of savings…" />
           </label>
           <div className="sm:col-span-2">
             <Button type="submit" disabled={loading}>
@@ -85,7 +84,7 @@ export function SimulatorView() {
                 ))}
               </ul>
             </Card>
-            <Card className="space-y-2 border-twin/40">
+            <Card className="space-y-2">
               <CardTitle className="flex items-center gap-2">
                 <FlaskConical className="size-4" aria-hidden /> Cheapest experiment
               </CardTitle>

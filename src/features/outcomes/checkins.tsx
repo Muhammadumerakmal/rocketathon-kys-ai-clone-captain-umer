@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import type { DueCheckin } from "@/contracts";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription } from "@/components/ui/card";
+import { Input } from "@/components/ui/field";
 import { postJson } from "@/lib/fetcher";
 import { cn } from "@/lib/utils";
 
@@ -14,8 +15,8 @@ export function Checkins({ initial }: { initial: DueCheckin[] }) {
 
   return (
     <section className="space-y-3" aria-labelledby="checkins">
-      <h2 id="checkins" className="text-lg font-semibold">
-        How did it go? ({items.length})
+      <h2 id="checkins" className="font-display text-xl font-bold">
+        How did it go? <span className="tabular-nums text-muted">({items.length})</span>
       </h2>
       {items.map((c) => (
         <CheckinCard key={c.id} checkin={c} onDone={() => setItems((xs) => xs.filter((x) => x.id !== c.id))} />
@@ -59,14 +60,18 @@ function CheckinCard({ checkin, onDone }: { checkin: DueCheckin; onDone: () => v
         </CardDescription>
         <fieldset>
           <legend className="text-sm font-medium">How satisfied are you with it?</legend>
-          <div className="mt-1 flex gap-1">
+          <div className="mt-1.5 flex gap-1.5">
             {[1, 2, 3, 4, 5].map((n) => (
               <button
                 key={n}
                 type="button"
                 onClick={() => setSatisfaction(n)}
                 aria-pressed={satisfaction === n}
-                className={cn("size-9 rounded-md border text-sm", satisfaction === n ? "border-twin bg-twin text-primary-foreground" : "border-border")}
+                aria-label={`${n} of 5`}
+                className={cn(
+                  "size-11 rounded-[var(--r-md)] border text-[15px] font-semibold tabular-nums transition-colors",
+                  satisfaction === n ? "border-ink bg-ink text-paper" : "border-line hover:border-ink",
+                )}
               >
                 {n}
               </button>
@@ -75,20 +80,28 @@ function CheckinCard({ checkin, onDone }: { checkin: DueCheckin; onDone: () => v
         </fieldset>
         <fieldset>
           <legend className="text-sm font-medium">Any regret?</legend>
-          <div className="mt-1 flex gap-2">
+          <div className="mt-1.5 flex gap-2">
             {[
               [false, "No"],
               [true, "Yes"],
             ].map(([v, label]) => (
-              <Button key={String(v)} type="button" size="sm" variant={regret === v ? "primary" : "secondary"} onClick={() => setRegret(v as boolean)}>
+              <Button key={String(v)} type="button" aria-pressed={regret === v} variant={regret === v ? "primary" : "secondary"} onClick={() => setRegret(v as boolean)}>
                 {label as string}
               </Button>
             ))}
           </div>
         </fieldset>
-        <input value={surprise} onChange={(e) => setSurprise(e.target.value)} maxLength={500} placeholder="What surprised you? (optional)" className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" />
-        <Button type="submit" size="sm" disabled={saving || !satisfaction || regret === null}>
-          {saving ? "Saving…" : "Save check-in"}
+        <Input
+          aria-label="What surprised you? (optional)"
+          name="surprise"
+          autoComplete="off"
+          value={surprise}
+          onChange={(e) => setSurprise(e.target.value)}
+          maxLength={500}
+          placeholder="What surprised you? (optional)…"
+        />
+        <Button type="submit" loading={saving} disabled={!satisfaction || regret === null}>
+          Save check-in
         </Button>
         {error && (
           <p className="text-sm text-danger" role="alert">

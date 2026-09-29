@@ -6,6 +6,7 @@ import type { CouncilResult } from "@/contracts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
+import { FieldLabel, Textarea } from "@/components/ui/field";
 import { postJson } from "@/lib/fetcher";
 import { cn } from "@/lib/utils";
 
@@ -32,10 +33,8 @@ export function CouncilView() {
     <div className="space-y-6">
       <Card>
         <form onSubmit={submit} className="space-y-3">
-          <label htmlFor="q" className="block text-sm font-medium">
-            What decision should your council debate?
-          </label>
-          <textarea id="q" required minLength={5} maxLength={1000} rows={2} value={question} onChange={(e) => setQuestion(e.target.value)} className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm" placeholder="Should I take the paid safe job or the unpaid dream internship?" />
+          <FieldLabel htmlFor="q">What decision should your council debate?</FieldLabel>
+          <Textarea id="q" name="question" autoComplete="off" required minLength={5} maxLength={1000} rows={2} value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="e.g. Take the paid safe job, or the unpaid dream internship…" />
           <Button type="submit" disabled={loading}>
             {loading ? "Your council is debating…" : "Convene the council"}
           </Button>
@@ -95,7 +94,7 @@ export function CouncilView() {
                 </ul>
               </div>
             )}
-            <div className="rounded-lg bg-twin/10 p-3">
+            <div className="rounded-[var(--r-md)] bg-surface-2 p-3">
               <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide">
                 <HelpCircle className="size-3.5" aria-hidden /> Questions only you can answer
               </p>

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/field";
 
 export function DeleteEverything() {
   const router = useRouter();
@@ -11,12 +12,13 @@ export function DeleteEverything() {
 
   async function onDelete() {
     setState("deleting");
+    // a network failure must not leave the button stuck on "Deleting…"
     const res = await fetch("/api/account", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ confirm: typed }),
-    });
-    if (res.ok) {
+    }).catch(() => null);
+    if (res?.ok) {
       setState("done");
       setTimeout(() => {
         router.replace("/");
@@ -32,15 +34,26 @@ export function DeleteEverything() {
       <label className="block text-sm" htmlFor="confirm-delete">
         Type <strong>DELETE</strong> to permanently erase your twin and every row about you.
       </label>
-      <div className="flex gap-2">
-        <input id="confirm-delete" value={typed} onChange={(e) => setTyped(e.target.value)} className="h-9 flex-1 rounded-lg border border-border bg-background px-3 text-sm" autoComplete="off" />
-        <Button variant="danger" size="sm" disabled={typed !== "DELETE" || state === "deleting"} onClick={onDelete}>
-          {state === "deleting" ? "Deleting…" : "Delete everything"}
+      <div className="flex flex-wrap gap-2">
+        <Input
+          id="confirm-delete"
+          name="confirm-delete"
+          value={typed}
+          onChange={(e) => setTyped(e.target.value)}
+          aria-invalid={state === "error" || undefined}
+          className="min-w-0 flex-1 basis-40 font-mono tracking-wide"
+          autoComplete="off"
+          autoCapitalize="characters"
+          spellCheck={false}
+          placeholder="DELETE"
+        />
+        <Button variant="danger" loading={state === "deleting"} disabled={typed !== "DELETE"} onClick={onDelete}>
+          Delete Everything
         </Button>
       </div>
       {state === "error" && (
         <p className="text-sm text-danger" role="alert">
-          Deletion failed — nothing was removed. Try again.
+          Deletion failed — nothing was removed. Check your connection and try again.
         </p>
       )}
     </div>

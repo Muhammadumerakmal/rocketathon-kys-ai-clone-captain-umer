@@ -57,6 +57,9 @@
 html {
   background: var(--paper);
   -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: transparent; /* every control has its own pressed state */
+  /* keep focused/anchored elements clear of the sticky top bar and the phone tab bar */
+  scroll-padding-block: 4.5rem 6rem;
 }
 
 body {
@@ -64,6 +67,57 @@ body {
   color: var(--ink);
   font-size: 16px;
   line-height: 1.5;
+}
+
+/* No double-tap-zoom delay on controls. */
+a,
+button,
+summary,
+label,
+input,
+select,
+textarea,
+[role="button"] {
+  touch-action: manipulation;
+}
+
+h1,
+h2,
+h3 {
+  text-wrap: balance;
+}
+p {
+  text-wrap: pretty;
+}
+
+/* Native <select> popups on Windows ignore inherited colours in dark mode. */
+select,
+option {
+  background-color: var(--surface);
+  color: var(--ink);
+}
+
+/* Modals and sheets don't scroll the page behind them. */
+dialog {
+  overscroll-behavior: contain;
+}
+
+/* Skip link: hidden until keyboard focus (plan §8). */
+.skip-link {
+  position: fixed;
+  left: 12px;
+  top: 12px;
+  z-index: 60;
+  translate: 0 -200%;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.skip-link:focus-visible {
+  translate: 0 0;
 }
 
 /* Display type: Bricolage Grotesque, tight tracking (plan §2.2). */
