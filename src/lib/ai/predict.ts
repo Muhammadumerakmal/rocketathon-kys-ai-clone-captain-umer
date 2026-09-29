@@ -55,7 +55,7 @@ export async function predict(ctx: TwinContext, input: PredictInput): Promise<{ 
         model: models.primary,
         instructions: predictorInstructions(ctx, input.options, sampleOrder(ctx.memories.length, i)),
         outputType: PredictionSample,
-        modelSettings: { reasoning: { effort: "medium" } },
+        modelSettings: { reasoning: { effort: models.effort } },
       });
     const stranger = new Agent({
       name: "StrangerBaseline",

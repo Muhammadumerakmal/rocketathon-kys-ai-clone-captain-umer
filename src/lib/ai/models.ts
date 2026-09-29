@@ -28,6 +28,10 @@ export const models = {
   get embedding() {
     return env().OPENAI_EMBEDDING_MODEL;
   },
+  /** Measured on gpt-5: medium ≈ 26 s per prediction; see evals/smoke for current numbers. */
+  get effort() {
+    return env().TWIN_REASONING_EFFORT;
+  },
 };
 
 let openai: OpenAI | undefined;

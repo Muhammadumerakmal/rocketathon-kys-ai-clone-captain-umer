@@ -27,6 +27,8 @@ const ServerEnv = z.object({
   TWIN_MODEL_PRIMARY: z.string().default("gpt-5"),
   TWIN_MODEL_FAST: z.string().default("gpt-5-mini"),
   OPENAI_EMBEDDING_MODEL: z.string().default("text-embedding-3-small"),
+  /** Reasoning effort for PRIMARY calls (predict, simulator, synthesis). Lower = faster. */
+  TWIN_REASONING_EFFORT: z.enum(["minimal", "low", "medium", "high"]).default("low"),
   TWIN_REALTIME_MODEL: optional,
 
   APPROVAL_HMAC_SECRET: optional,

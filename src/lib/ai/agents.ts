@@ -66,7 +66,7 @@ export const synthesisAgent = () =>
     model: models.primary,
     instructions: SYNTHESIS_INSTRUCTIONS,
     outputType: CouncilSynthesis,
-    modelSettings: { reasoning: { effort: "medium" } },
+    modelSettings: { reasoning: { effort: models.effort } },
   });
 
 export const simulatorAgent = (ctx: TwinContext) =>
@@ -75,5 +75,5 @@ export const simulatorAgent = (ctx: TwinContext) =>
     model: models.primary,
     instructions: simulatorInstructions(ctx),
     outputType: Simulation,
-    modelSettings: { reasoning: { effort: "medium" } },
+    modelSettings: { reasoning: { effort: models.effort } },
   });
