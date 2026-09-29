@@ -1,3 +1,4 @@
+import path from "node:path";
 import type { NextConfig } from "next";
 
 const isDev = process.env.NODE_ENV !== "production";
@@ -27,6 +28,8 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // Pin the workspace root: a stray lockfile higher up the tree must not be picked instead.
+  turbopack: { root: path.resolve(".") },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

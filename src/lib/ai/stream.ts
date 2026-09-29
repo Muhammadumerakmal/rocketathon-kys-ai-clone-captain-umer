@@ -54,11 +54,9 @@ export function sseFromAgentStream(
     async start(controller) {
       opts.before.forEach((e) => controller.enqueue(frame(e)));
       try {
-        const reader = result.toTextStream().getReader();
-        for (;;) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          if (value) controller.enqueue(frame({ type: "text", delta: value }));
+        // The SDK's stream shim guarantees async iteration (not getReader) across runtimes.
+        for await (const delta of result.toTextStream()) {
+          if (delta) controller.enqueue(frame({ type: "text", delta }));
         }
         await result.completed;
         if (result.error) throw result.error;
