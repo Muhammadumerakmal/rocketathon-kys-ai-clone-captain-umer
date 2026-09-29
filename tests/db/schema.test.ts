@@ -201,6 +201,42 @@ describe("resolve_prediction (atomic correction loop)", () => {
   });
 });
 
+describe("set_pivotal_evidence (F3)", () => {
+  const E1 = "00000000-0000-4000-8000-00000000e001";
+  const E2 = "00000000-0000-4000-8000-00000000e002";
+  let id: string;
+
+  beforeAll(async () => {
+    const [p] = await asUser(A, () =>
+      rows<{ id: string }>(
+        `insert into predictions (user_id, scenario, options, distribution, top_choice, baseline_choice, baseline_agrees,
+                                  confidence, confidence_band, prompt_version, model, evidence)
+         values ($1, 'x?', '["a","b"]', '{"a":1}', 'a', 'b', false, 0.6, 'medium', 'p', 'm',
+                 $2::jsonb) returning id`,
+        [A, JSON.stringify([{ id: E1, type: "memory", label: "one", relevance: 1 }, { id: E2, type: "value", label: "two", relevance: 0.5 }])],
+      ),
+    );
+    id = p!.id;
+  });
+
+  it("flips only pivotal flags, preserving order and other fields", async () => {
+    const [r] = await asUser(A, () => rows<{ ev: { id: string; pivotal: boolean; label: string }[] }>("select set_pivotal_evidence($1, $2) as ev", [id, [E2]]));
+    expect(r!.ev.map((e) => [e.id, e.pivotal, e.label])).toEqual([
+      [E1, false, "one"],
+      [E2, true, "two"],
+    ]);
+  });
+
+  it("another user cannot touch my prediction", async () => {
+    await expect(asUser(B, () => db.query("select set_pivotal_evidence($1, $2)", [id, [E1]]))).rejects.toThrow(/not found/);
+  });
+
+  it("clients still cannot update predictions directly", async () => {
+    const r = await asUser(A, () => db.query("update predictions set confidence = 0.95 where id = $1", [id]));
+    expect(r.affectedRows).toBe(0);
+  });
+});
+
 describe("record_usage", () => {
   it("only ever adds non-negative usage", async () => {
     await asUser(A, () => db.query("select record_usage(100, 50)"));

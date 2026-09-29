@@ -26,7 +26,7 @@ Plan of record: `docs/plans/TWINOS_ULTRA_PLAN_v2.md`. Roadmap and phase status: 
 
 ## Never
 
-Demographics in prompts · twins of other people · "I am {name}" first-person claims · `dangerouslySetInnerHTML` on model output · the Supabase secret key outside `src/lib/supabase/admin.ts`.
+Demographics in prompts · twins of other people · "I am {name}" first-person claims · `dangerouslySetInnerHTML` on model output · the Supabase secret key outside `src/lib/supabase/admin.ts` · importing `admin.ts` anywhere except cron routes, connector execution and `src/server/passport.ts` (account deletion).
 
 ## Layout
 

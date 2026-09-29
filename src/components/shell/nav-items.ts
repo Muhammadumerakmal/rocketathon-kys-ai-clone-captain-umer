@@ -32,4 +32,4 @@ export const NAV_ITEMS: readonly NavItem[] = [
 ];
 
 /** Bump as phases land; items above this are shown as "coming soon". */
-export const SHIPPED_PHASE = 8;
+export const SHIPPED_PHASE = 9;

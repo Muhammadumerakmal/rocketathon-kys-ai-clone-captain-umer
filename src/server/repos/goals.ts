@@ -21,6 +21,26 @@ export async function activeGoals(sb: SupabaseClient, limit = 5): Promise<Goal[]
   return data;
 }
 
+/**
+ * Goals for prompts and Council lenses: the goals table if the user has any, otherwise
+ * their active goal-kind memories ("My goal this year is…"), most important first.
+ */
+export async function goalsForTwin(sb: SupabaseClient, limit = 3): Promise<Goal[]> {
+  const explicit = await activeGoals(sb, limit);
+  if (explicit.length > 0) return explicit;
+  const { data, error } = await sb
+    .from("memories")
+    .select("id,content,importance")
+    .eq("kind", "goal")
+    .eq("influence", "active")
+    .is("valid_to", null)
+    .order("importance", { ascending: false })
+    .limit(limit)
+    .returns<{ id: string; content: string; importance: number }[]>();
+  if (error) throw error;
+  return data.map((m, i) => ({ id: m.id, title: m.content.slice(0, 120), description: null, priority: i + 1, horizon: "year" as const }));
+}
+
 export async function createGoal(
   sb: SupabaseClient,
   userId: string,

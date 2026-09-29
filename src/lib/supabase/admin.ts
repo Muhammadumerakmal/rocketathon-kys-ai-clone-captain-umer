@@ -3,8 +3,9 @@ import { createClient } from "@supabase/supabase-js";
 import { env } from "@/lib/env";
 
 /**
- * SECRET-KEY client: bypasses RLS. Plan §10 — import ONLY from cron handlers and
- * connector execution (paused_runs, action_proposals, connector tokens, deletion_log).
+ * SECRET-KEY client: bypasses RLS. Plan §10 — import ONLY from cron handlers, connector
+ * execution (paused_runs, action_proposals, connector tokens) and verified account deletion
+ * (src/server/passport.ts: deletion_log + auth.admin.deleteUser).
  * Every query here must filter by user_id explicitly.
  */
 export function createAdminClient() {

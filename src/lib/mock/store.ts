@@ -1,5 +1,5 @@
 import "server-only";
-import type { DuelRound, Memory, MemoryRevision, Prediction, ResolveRevisionRequest } from "@/contracts";
+import type { DueCheckin, DuelRound, Memory, MemoryRevision, Prediction, ResolveRevisionRequest } from "@/contracts";
 import { memories, revision } from "./fixtures";
 
 export interface MockResolution {
@@ -23,6 +23,7 @@ interface MockState {
   duelRounds: DuelRound[];
   predictions: Prediction[];
   resolutions: MockResolution[];
+  checkins: DueCheckin[];
 }
 
 const g = globalThis as typeof globalThis & { __twinMock?: MockState };
@@ -36,6 +37,7 @@ export function mockState(): MockState {
     duelRounds: [],
     predictions: [],
     resolutions: [],
+    checkins: [],
   };
   return g.__twinMock;
 }

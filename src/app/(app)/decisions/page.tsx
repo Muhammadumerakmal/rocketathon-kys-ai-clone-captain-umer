@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
-import type { Prediction } from "@/contracts";
+import type { DueCheckin, Prediction } from "@/contracts";
+import { Checkins } from "@/features/outcomes/checkins";
+import { dueCheckins } from "@/server/repos/outcomes";
 import { Card, CardDescription } from "@/components/ui/card";
 import { PredictForm } from "@/features/predictions/predict-form";
 import { PredictionCard } from "@/features/predictions/prediction-card";
@@ -11,7 +13,10 @@ export const metadata: Metadata = { title: "Decisions" };
 
 export default async function DecisionsPage() {
   const viewer = await requireViewer();
-  const recent: Prediction[] = viewer.mode === "mock" ? mockState().predictions : await recentPredictions(viewer.supabase);
+  const [recent, checkins]: [Prediction[], DueCheckin[]] =
+    viewer.mode === "mock"
+      ? [mockState().predictions, mockState().checkins]
+      : await Promise.all([recentPredictions(viewer.supabase), dueCheckins(viewer.supabase)]);
   const open = recent.filter((p) => p.status === "open");
 
   return (
@@ -22,6 +27,8 @@ export default async function DecisionsPage() {
           Ask your twin to predict a choice. It runs five times and asks a stranger too — so you can see whether it really knows you.
         </p>
       </header>
+
+      <Checkins initial={checkins} />
 
       <PredictForm />
 

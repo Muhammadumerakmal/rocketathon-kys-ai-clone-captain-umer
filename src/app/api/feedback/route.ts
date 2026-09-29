@@ -1,4 +1,5 @@
 import { FeedbackRequest } from "@/contracts";
+import { embed } from "@/lib/ai/embeddings";
 import { isMock } from "@/lib/env";
 import { HttpError, parseJson, withApi } from "@/lib/http";
 import { mockDelay } from "@/lib/mock";
@@ -26,6 +27,8 @@ export const POST = withApi(async (req: Request) => {
     const baselineCorrect = p.baseline.choice === body.actualChoice;
     p.status = "resolved";
     s.resolutions.push({ predictionId: p.id, category: p.category, confidence: p.confidence.value, actualChoice: body.actualChoice, twinCorrect, baselineCorrect });
+    // Real mode schedules the check-in 7 days out; the demo makes it due now so it can be shown.
+    s.checkins.push({ id: crypto.randomUUID(), predictionId: p.id, scenario: p.scenario, topChoice: body.actualChoice, dueAt: new Date().toISOString() });
     return Response.json({ ok: true, twinCorrect, baselineCorrect });
   }
 
@@ -39,12 +42,15 @@ export const POST = withApi(async (req: Request) => {
   const fb = await resolvePrediction(supabase, body);
 
   const others = prediction.options.filter((o) => o !== body.actualChoice);
+  const content = `Chose "${body.actualChoice}"${others.length ? ` over ${others.map((o) => `"${o}"`).join(", ")}` : ""} when facing: ${prediction.scenario}${body.note ? ` — ${body.note}` : ""}`.slice(0, 4000);
   await insertMemory(supabase, user.id, {
-    content: `Chose "${body.actualChoice}"${others.length ? ` over ${others.map((o) => `"${o}"`).join(", ")}` : ""} when facing: ${prediction.scenario}${body.note ? ` — ${body.note}` : ""}`.slice(0, 4000),
+    content,
     kind: "episodic",
     sourceType: "feedback",
     sourceRef: prediction.id,
     importance: 0.7,
+    // Embedded so semantic search finds it, not just keyword search.
+    embedding: await embed(content),
   });
 
   return Response.json({ ok: true, twinCorrect: fb.twin_correct, baselineCorrect: fb.baseline_correct });

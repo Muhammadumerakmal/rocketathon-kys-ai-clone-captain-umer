@@ -1,7 +1,7 @@
 import "server-only";
 import type { EvidenceRef, EvidenceType, Influence, MemoryKind } from "@/contracts";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { activeGoals } from "@/server/repos/goals";
+import { goalsForTwin } from "@/server/repos/goals";
 import { matchMemories } from "@/server/repos/memories";
 import { getProfile } from "@/server/repos/profiles";
 import { contradictedMemoryIds } from "@/server/repos/revisions";
@@ -70,7 +70,7 @@ export async function buildTwinContext(
   const [rows, traits, goals, profile, contradicted] = await Promise.all([
     matchMemories(sb, { queryText: query, embedding, asOf, limit }),
     getTraits(sb),
-    activeGoals(sb),
+    goalsForTwin(sb),
     getProfile(sb, userId),
     contradictedMemoryIds(sb),
   ]);

@@ -1,8 +1,8 @@
 "use client";
 
 import { AlertTriangle, CheckCircle2, UserRound, Users } from "lucide-react";
-import { useState } from "react";
-import type { Prediction } from "@/contracts";
+import { useEffect, useState } from "react";
+import type { EvidenceRef, Prediction } from "@/contracts";
 import { EvidenceList } from "@/components/shared/evidence-list";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,22 @@ export function PredictionCard({ prediction, onResolved }: { prediction: Predict
   const [resolved, setResolved] = useState<{ actual: string; twinCorrect: boolean; baselineCorrect: boolean } | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [evidence, setEvidence] = useState(p.evidence);
+  const needsAblation = p.status === "open" && p.evidence.length > 0 && p.evidence.some((e) => e.pivotal === undefined);
+  const [checking, setChecking] = useState(needsAblation);
+
+  // Counterfactual check runs AFTER the card renders (F3): pivotal badges fill in later.
+  useEffect(() => {
+    if (!needsAblation) return;
+    let cancelled = false;
+    postJson<{ evidence: EvidenceRef[] }>(`/api/predict/${p.id}/ablate`, {})
+      .then((r) => !cancelled && setEvidence(r.evidence))
+      .catch(() => undefined) // optional enrichment: the card is complete without it
+      .finally(() => !cancelled && setChecking(false));
+    return () => {
+      cancelled = true;
+    };
+  }, [needsAblation, p.id]);
 
   async function resolve(actual: string) {
     setSaving(true);
@@ -105,8 +121,10 @@ export function PredictionCard({ prediction, onResolved }: { prediction: Predict
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <CardTitle className="mb-2 text-xs uppercase tracking-wide text-muted">Evidence</CardTitle>
-          <EvidenceList evidence={p.evidence} />
+          <CardTitle className="mb-2 text-xs uppercase tracking-wide text-muted">
+            Evidence {checking && <span className="normal-case tracking-normal">· checking which memories really mattered…</span>}
+          </CardTitle>
+          <EvidenceList evidence={evidence} />
         </div>
         {p.missingInfo.length > 0 && (
           <div>
