@@ -18,7 +18,8 @@ npm run dev           # http://localhost:3000
 | Script | What it does |
 |---|---|
 | `npm run dev` | Next.js dev server |
-| `npm run check` | typecheck + lint + unit tests (run before every commit) |
+| `npm run check` | typecheck + lint + 138 tests incl. real-Postgres schema tests |
+| `npm run db:setup-sql` | regenerate `supabase/setup.sql` from migrations |
 | `npm run eval` | live-model evals on the Aria persona (needs keys) |
 
 ## Modes
@@ -26,6 +27,10 @@ npm run dev           # http://localhost:3000
 - `TWIN_MOCK=1`: every AI route returns contract-valid fixtures. No keys or database needed.
 - `TWIN_REPLAY=1`: replays recorded real outputs for the Aria demo (on-stage fallback).
 - Neither: live Supabase + OpenAI.
+
+## Deploy
+
+Step-by-step (Supabase → local → Vercel): **[docs/DEPLOY.md](docs/DEPLOY.md)**. The database is one paste: `supabase/setup.sql`.
 
 ## Docs
 

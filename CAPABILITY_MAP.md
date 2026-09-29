@@ -34,13 +34,18 @@ Each phase ends with `npm run check` green and one or more commits. A phase is d
 
 | Phase | State | Verified by |
 |---|---|---|
-| 0 Foundation | ✅ done | `npm run check` (91 tests), `next build` |
-| 1 Data layer | ✅ written · ⏳ needs a Supabase project to apply | SQL reviewed; repo mappers unit-tested |
-| 2 Identity | ✅ done (mock) · live needs Supabase | prod server smoke test |
-| 3 Training | ✅ done | unit tests + API smoke test |
-| 4 Memory | ✅ done (mock) · live ingest needs keys | inbox resolve / seal smoke test |
-| 5 Twin chat | ✅ done (mock) · live needs keys | SSE smoke test, prompt-safety tests |
-| 6–11 | ⏳ in progress | |
+| 0 Foundation | ✅ | `npm run check`, `next build` |
+| 1 Data layer | ✅ | migrations + seed run on real Postgres/pgvector (`tests/db`): RLS isolation, sealed memories, time-travel, atomic resolve |
+| 2 Identity | ✅ | prod-server smoke test (live sign-in needs a Supabase project) |
+| 3 Training | ✅ | unit + API smoke tests |
+| 4 Memory | ✅ | inbox resolve / seal smoke; live classifier on gpt-5 |
+| 5 Twin chat | ✅ | SSE smoke; prompt-safety tests; live chat + guardrail on gpt-5 |
+| 6 Prediction | ✅ | predict → resolve → history smoke; **live: twin 3/3 vs stranger 1/3 on Aria** |
+| 7 Duel | ✅ | trained-user smoke: +33 pts lift |
+| 8 Dashboard | ✅ | unit + smoke; chart palette validated (CVD, both themes) |
+| 9 Depth | ✅ | council/simulator live on gpt-5; ablation, check-ins, passport, cron smoke |
+| 10 Connectors & voice | ⏸ not built (P2/P3, optional per plan cut list; needs Google OAuth app) | — |
+| 11 Evals & demo | ✅ `npm run eval:smoke` (Aria) · deploy guide `docs/DEPLOY.md` · Playwright E2E not added (smoke script covers the demo path) | |
 
 ## Dependency graph
 
