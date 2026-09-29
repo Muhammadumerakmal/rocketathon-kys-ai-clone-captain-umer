@@ -1,0 +1,9 @@
+import { clsx, type ClassValue } from "clsx";
+import { twMerge } from "tailwind-merge";
+
+/** Merge conditional class names, letting later Tailwind classes win. */
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+export const pct = (x: number) => `${Math.round(x * 100)}%`;

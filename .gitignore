@@ -1,0 +1,26 @@
+# deps
+node_modules/
+# next
+.next/
+out/
+next-env.d.ts
+# build / test output
+coverage/
+playwright-report/
+test-results/
+*.tsbuildinfo
+# env (only .env.example is committed)
+.env
+.env.*
+!.env.example
+# supabase local
+supabase/.branches/
+supabase/.temp/
+# os / editor
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+# misc
+npm-debug.log*
+install.cmd

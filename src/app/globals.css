@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens. Components use the semantic names (bg-surface, text-muted…),
+ * never raw colors, so dark mode is one variable swap.
+ */
+:root {
+  --background: oklch(0.985 0.004 265);
+  --surface: oklch(1 0 0);
+  --surface-2: oklch(0.965 0.006 265);
+  --foreground: oklch(0.22 0.02 265);
+  --muted: oklch(0.52 0.02 265);
+  --border: oklch(0.91 0.008 265);
+  --primary: oklch(0.55 0.2 275);
+  --primary-foreground: oklch(0.99 0 0);
+  --accent: oklch(0.72 0.15 175);
+  --twin: oklch(0.55 0.2 275);
+  --stranger: oklch(0.65 0.03 265);
+  --success: oklch(0.62 0.15 150);
+  --warning: oklch(0.75 0.15 75);
+  --danger: oklch(0.6 0.2 25);
+  --radius: 0.75rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: oklch(0.16 0.015 265);
+    --surface: oklch(0.2 0.018 265);
+    --surface-2: oklch(0.24 0.02 265);
+    --foreground: oklch(0.95 0.005 265);
+    --muted: oklch(0.7 0.02 265);
+    --border: oklch(0.3 0.02 265);
+    --primary: oklch(0.7 0.16 275);
+    --primary-foreground: oklch(0.16 0.015 265);
+    --twin: oklch(0.72 0.16 275);
+    --stranger: oklch(0.6 0.03 265);
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-twin: var(--twin);
+  --color-stranger: var(--stranger);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --radius-lg: var(--radius);
+  --font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", Menlo, monospace;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
