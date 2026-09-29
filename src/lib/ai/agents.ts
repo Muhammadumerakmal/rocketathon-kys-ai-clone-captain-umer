@@ -1,5 +1,5 @@
 import "server-only";
-import { Agent } from "@openai/agents";
+import { Agent, type Tool } from "@openai/agents";
 import {
   CouncilSynthesis,
   LensView,
@@ -22,12 +22,18 @@ import {
 
 /** Agent factories. No tools and no handoffs in the MVP: predictable cost, easy to trace. */
 
-export function twinChatAgent(ctx: TwinContext) {
+/**
+ * The twin chat agent. `tools` is empty unless the user connected a calendar
+ * (least privilege: no tools by default, plan §23). Same name on every build so a
+ * serialized RunState can be resumed with a freshly built agent.
+ */
+export function twinChatAgent(ctx: TwinContext, tools: Tool[] = []) {
   return new Agent({
     name: "Twin",
     model: models.primary,
-    instructions: twinInstructions(ctx),
+    instructions: twinInstructions(ctx, { canSchedule: tools.length > 0 }),
     modelSettings: { reasoning: { effort: "low" } },
+    tools,
     inputGuardrails: [impersonationGuard],
     outputGuardrails: [noFirstPersonClaimGuard(ctx.twinName)],
   });

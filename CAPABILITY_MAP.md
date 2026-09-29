@@ -44,7 +44,7 @@ Each phase ends with `npm run check` green and one or more commits. A phase is d
 | 7 Duel | ✅ | trained-user smoke: +33 pts lift |
 | 8 Dashboard | ✅ | unit + smoke; chart palette validated (CVD, both themes) |
 | 9 Depth | ✅ | council/simulator live on gpt-5; ablation, check-ins, passport, cron smoke |
-| 10 Connectors & voice | ⏸ not built (P2/P3, optional per plan cut list; needs Google OAuth app) | — |
+| 10 Connectors | ✅ approval-gated actions with a built-in demo calendar (`needsApproval` → serialized RunState → HMAC-verified approve/reject → execute → append-only audit). Live pause/serialize/approve/reject verified on gpt-5. Google Calendar adapter + voice not built (P2/P3) | unit policy tests, DB tests, live eval, prod smoke incl. forged/replayed tokens |
 | 11 Evals & demo | ✅ `npm run eval:smoke` (Aria) · deploy guide `docs/DEPLOY.md` · Playwright E2E not added (smoke script covers the demo path) | |
 
 ## Dependency graph

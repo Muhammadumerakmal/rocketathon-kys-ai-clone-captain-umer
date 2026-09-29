@@ -48,7 +48,8 @@ export const SSE_HEADERS = {
 export function sseFromAgentStream(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   result: StreamedRunResult<any, any>,
-  opts: { before: TwinStreamEvent[]; userMessage: string; onComplete?: () => Promise<void> },
+  /** onComplete may return extra events (e.g. approval_required) sent before `done`. */
+  opts: { before: TwinStreamEvent[]; userMessage: string; onComplete?: () => Promise<TwinStreamEvent[] | void> },
 ): Response {
   const body = new ReadableStream<Uint8Array>({
     async start(controller) {
@@ -60,7 +61,8 @@ export function sseFromAgentStream(
         }
         await result.completed;
         if (result.error) throw result.error;
-        await opts.onComplete?.();
+        const extra = (await opts.onComplete?.()) ?? [];
+        extra.forEach((e) => controller.enqueue(frame(e)));
         controller.enqueue(frame({ type: "done" }));
       } catch (err) {
         controller.enqueue(frame(streamErrorEvent(err, opts.userMessage)));

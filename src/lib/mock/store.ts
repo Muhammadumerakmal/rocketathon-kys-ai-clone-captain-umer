@@ -1,5 +1,14 @@
 import "server-only";
-import type { DueCheckin, DuelRound, Memory, MemoryRevision, Prediction, ResolveRevisionRequest } from "@/contracts";
+import type {
+  ActionProposal,
+  DueCheckin,
+  DuelRound,
+  FocusBlockArgs,
+  Memory,
+  MemoryRevision,
+  Prediction,
+  ResolveRevisionRequest,
+} from "@/contracts";
 import { memories, revision } from "./fixtures";
 
 export interface MockResolution {
@@ -24,6 +33,22 @@ interface MockState {
   predictions: Prediction[];
   resolutions: MockResolution[];
   checkins: DueCheckin[];
+  proposals: MockProposal[];
+  audit: MockAuditEntry[];
+  calendarConnected: boolean;
+}
+
+export interface MockProposal extends ActionProposal {
+  userId: string;
+  argsHash: string;
+  args: FocusBlockArgs;
+  result: Record<string, unknown> | null;
+}
+
+export interface MockAuditEntry {
+  at: string;
+  event: string;
+  detail: string;
 }
 
 const g = globalThis as typeof globalThis & { __twinMock?: MockState };
@@ -38,6 +63,9 @@ export function mockState(): MockState {
     predictions: [],
     resolutions: [],
     checkins: [],
+    proposals: [],
+    audit: [],
+    calendarConnected: false,
   };
   return g.__twinMock;
 }

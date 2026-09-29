@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { IsoDateTime, Uuid } from "./common";
 
-export const ConnectorId = z.enum(["google-calendar"]);
+/** demo-calendar: built-in calendar (no OAuth) behind the same adapter interface as Google. */
+export const ConnectorId = z.enum(["demo-calendar", "google-calendar"]);
 export type ConnectorId = z.infer<typeof ConnectorId>;
 
 export const ProposalStatus = z.enum([

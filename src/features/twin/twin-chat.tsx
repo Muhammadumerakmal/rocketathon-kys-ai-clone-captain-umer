@@ -7,12 +7,14 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { ApprovalCard } from "./approval-card";
 import { useTwinStream } from "./use-twin-stream";
 
 const SUGGESTIONS = [
   "Should I take the paid safe job or the unpaid dream internship?",
   "What do I usually do when a deadline is close?",
   "What matters most to me right now?",
+  "Block 45 minutes tomorrow morning to prep",
 ];
 
 export function TwinChat({ twinName }: { twinName: string }) {
@@ -78,6 +80,7 @@ export function TwinChat({ twinName }: { twinName: string }) {
                     {m.error}
                   </p>
                 )}
+                {m.role === "twin" && m.approval && <ApprovalCard approval={m.approval} />}
                 {m.role === "twin" && m.evidence && (
                   <Card className="p-3">
                     <details open={false}>

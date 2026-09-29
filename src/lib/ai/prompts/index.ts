@@ -31,13 +31,19 @@ const timeframe = (ctx: TwinContext) =>
     ? `TIME-TRAVEL MODE: answer as the user was on ${ctx.asOf.slice(0, 10)}. Only the memories below were true then.`
     : "";
 
+const scheduling = (now: Date) =>
+  `You can PROPOSE calendar focus blocks with create_focus_block when the user asks you to schedule or block time. ` +
+  `Current time: ${now.toISOString()} (UTC). Use ISO 8601 with a Z offset for start. ` +
+  "The user must approve every proposal — never say an event exists until it's approved.";
+
 /** Layers 1–5 of plan §11.1. Conversation history is added by the Session. */
-export function twinInstructions(ctx: TwinContext): string {
+export function twinInstructions(ctx: TwinContext, opts: { canSchedule?: boolean; now?: Date } = {}): string {
   return [
     identity(ctx),
     honesty,
     INJECTION_BOUNDARY,
     timeframe(ctx),
+    opts.canSchedule ? scheduling(opts.now ?? new Date()) : "",
     profileBlock(ctx.profile),
     "Relevant memories (most relevant first):",
     memoryBlock(ctx.memories),

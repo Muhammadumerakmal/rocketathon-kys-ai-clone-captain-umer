@@ -11,6 +11,8 @@ export interface ChatMessage {
   evidence?: EvidenceRef[];
   error?: string;
   asOf?: string | null;
+  /** an action the twin proposed; nothing happens until the user approves it */
+  approval?: { proposalId: string; token: string; summary: string };
 }
 
 /** Streams /api/twin: text deltas, evidence, errors. No UI-SDK dependency (plan §11.1). */
@@ -55,6 +57,7 @@ export function useTwinStream() {
           else if (e.type === "text") patchLast((m) => ({ ...m, text: m.text + e.delta }));
           else if (e.type === "evidence") patchLast((m) => ({ ...m, evidence: e.evidence }));
           else if (e.type === "error") patchLast((m) => ({ ...m, error: e.message }));
+          else if (e.type === "approval_required") patchLast((m) => ({ ...m, approval: { proposalId: e.proposalId, token: e.token, summary: e.summary } }));
         }
       }
     } catch (err) {

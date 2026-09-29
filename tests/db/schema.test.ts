@@ -112,6 +112,27 @@ describe("row-level security", () => {
     await expect(asUser(A, () => db.query("insert into usage_budget (user_id, tokens_in) values ($1, -999999)", [A]))).rejects.toThrow();
   });
 
+  it("action proposals are readable by their owner but only the server can create or change them", async () => {
+    await expect(
+      asUser(A, () =>
+        db.query(
+          `insert into action_proposals (user_id, connector, action, arguments, args_hash, summary, expires_at)
+           values ($1, 'demo-calendar', 'create_focus_block', '{}', 'x', 'forged', now() + interval '1 hour')`,
+          [A],
+        ),
+      ),
+    ).rejects.toThrow(/row-level security/i);
+    await db.query(
+      `insert into action_proposals (user_id, connector, action, arguments, args_hash, summary, expires_at)
+       values ($1, 'demo-calendar', 'create_focus_block', '{}', 'x', 'server-made', now() + interval '1 hour')`,
+      [A],
+    );
+    expect(await asUser(A, () => rows("select id from action_proposals"))).toHaveLength(1);
+    expect(await asUser(B, () => rows("select id from action_proposals"))).toHaveLength(0);
+    const upd = await asUser(A, () => db.query("update action_proposals set status = 'approved'"));
+    expect(upd.affectedRows).toBe(0);
+  });
+
   it("audit log is append-only", async () => {
     await asUser(A, () => db.query("insert into audit_logs (user_id, event_type) values ($1, 'test')", [A]));
     const updated = await asUser(A, () => db.query("update audit_logs set event_type = 'tampered'"));
