@@ -7,6 +7,10 @@ Two modes:
 | **Demo** (`TWIN_MOCK=1`) | nothing | trying the UI; data resets on restart, no real AI |
 | **Real** (`TWIN_MOCK=0`) | Supabase project + OpenAI key | actual accounts, persistence, real twin |
 
+Leave `TWIN_MOCK` empty for **auto**: live as soon as `OPENAI_API_KEY`, `NEXT_PUBLIC_SUPABASE_URL` and the
+publishable (or anon) key are all set, demo otherwise. A half-configured deploy then shows the demo instead of
+a 500 on every page, and `/api/health` lists which variables are `missing` (names only, never values).
+
 ## 1. Supabase (once, ~5 min)
 
 1. [supabase.com](https://supabase.com) → **New project**. Save the database password.
@@ -40,16 +44,23 @@ CRON_SECRET=<random>
 TWIN_MOCK=0
 ```
 
-Check it: `http://localhost:3000/api/health` → `{"mode":"live","supabaseConfigured":true,"openaiConfigured":true}`.
+Check it: `http://localhost:3000/api/health` → `{"mode":"live","supabaseConfigured":true,"openaiConfigured":true,"missing":[]}`.
 
 ## 3. Vercel
 
 1. [vercel.com/new](https://vercel.com/new) → import `Muhammadaliakmal/expo-team-hackathon`. Framework: Next.js (auto).
-2. **Environment Variables**: add every variable from your `.env.local` (Production + Preview).
-   Set `NEXT_PUBLIC_APP_URL` to `https://<your-app>.vercel.app`.
-   `NEXT_PUBLIC_*` values are baked in at build time: redeploy after changing them.
-3. **Deploy**. Then add the Vercel URL to Supabase's Site URL + Redirect URLs (step 1.4).
-4. The weekly cron in `vercel.json` (trait snapshots for drift) authenticates with `CRON_SECRET` automatically.
+2. **Link Supabase** (pick one):
+   - **Integration**: Vercel project → **Storage / Integrations → Supabase** → connect your existing project.
+     It injects `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `SUPABASE_SERVICE_ROLE_KEY`;
+     TwinOS accepts those names as-is.
+   - **Manual**: add `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SECRET_KEY`.
+3. **Environment Variables**: add the rest of your `.env.local` (Production + Preview): at least
+   `OPENAI_API_KEY`, `APPROVAL_HMAC_SECRET`, `CRON_SECRET`. Values may be pasted with blanks or trailing
+   `# comments`; empty ones count as unset. `NEXT_PUBLIC_APP_URL` defaults to the Vercel URL.
+   `NEXT_PUBLIC_*` values are baked in at build time: **redeploy after changing them**.
+4. **Deploy**, then open `https://<your-app>.vercel.app/api/health`: `mode` should be `live` and `missing` empty.
+5. Add the Vercel URL to Supabase's Site URL + Redirect URLs (step 1.4), or magic links bounce back to localhost.
+6. The weekly cron in `vercel.json` (trait snapshots for drift) authenticates with `CRON_SECRET` automatically.
 
 Node 22+ is required (`package.json#engines`); Vercel picks it up.
 

@@ -1,8 +1,10 @@
 import path from "node:path";
 import type { NextConfig } from "next";
+import { cleanEnvValue, withScheme } from "./src/lib/supabase/public-env";
 
 const isDev = process.env.NODE_ENV !== "production";
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
+// Same cleaning as the browser client, so the CSP allows exactly the origin it connects to.
+const supabaseUrl = withScheme(cleanEnvValue(process.env.NEXT_PUBLIC_SUPABASE_URL)) ?? "";
 
 // Plan §10: CSP, X-Frame-Options DENY, no framing, no sniffing.
 const csp = [

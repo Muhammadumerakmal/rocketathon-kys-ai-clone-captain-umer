@@ -11,7 +11,7 @@ A consent-based digital twin that learns how you make decisions, then **measurab
 ```bash
 nvm use 22            # Node >= 22
 npm install
-cp .env.example .env.local   # TWIN_MOCK=1 works with no keys
+cp .env.example .env.local   # no keys = demo mode
 npm run dev           # http://localhost:3000
 ```
 
@@ -24,7 +24,7 @@ npm run dev           # http://localhost:3000
 
 ## Modes
 
-- `TWIN_MOCK=1` (demo): every AI route returns contract-valid fixtures; no keys or database needed. Data is in memory and resets on restart.
+- `TWIN_MOCK=1` (demo, also the automatic fallback when keys are missing): every AI route returns contract-valid fixtures; no keys or database needed. Data is in memory and resets on restart.
 - Neither: live Supabase + OpenAI.
 
 ## Deploy

@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
+import { publicSupabaseEnv } from "./public-env";
 
 /**
  * Refreshes the Supabase session cookie on every request (the only job of proxy.ts, plan §4).
@@ -7,11 +8,10 @@ import { type NextRequest, NextResponse } from "next/server";
  */
 export async function updateSession(request: NextRequest) {
   let response = NextResponse.next({ request });
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  if (!url || !key) return response;
+  const cfg = publicSupabaseEnv();
+  if (!cfg) return response;
 
-  const supabase = createServerClient(url, key, {
+  const supabase = createServerClient(cfg.url, cfg.key, {
     cookies: {
       getAll: () => request.cookies.getAll(),
       setAll(toSet) {
@@ -23,6 +23,11 @@ export async function updateSession(request: NextRequest) {
   });
 
   // Don't put code between createServerClient and getUser: it's what triggers the refresh.
-  await supabase.auth.getUser();
+  // A Supabase outage or bad URL must not take down every page: pages re-check auth anyway.
+  try {
+    await supabase.auth.getUser();
+  } catch (err) {
+    console.error("[proxy] session refresh failed", err);
+  }
   return response;
 }
