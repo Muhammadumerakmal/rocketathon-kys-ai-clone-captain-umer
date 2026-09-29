@@ -54,6 +54,8 @@ export const TwinStreamEvent = z.discriminatedUnion("type", [
   }),
   z.object({ type: z.literal("personalized"), memories: z.array(UsedMemory).min(1).max(12) }),
   z.object({ type: z.literal("memory_update"), update: MemoryUpdate }),
+  z.object({ type: z.literal("memory_update_failed"), message: z.string().max(200) }),
+  z.object({ type: z.literal("answer_complete") }),
   z.object({ type: z.literal("error"), code: z.string(), message: z.string() }),
   z.object({ type: z.literal("done") }),
 ]);
