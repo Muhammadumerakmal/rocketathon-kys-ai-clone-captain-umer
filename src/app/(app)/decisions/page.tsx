@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { DueCheckin, Prediction } from "@/contracts";
+import { PageHeader } from "@/components/shared/page-header";
 import { Checkins } from "@/features/outcomes/checkins";
 import { dueCheckins } from "@/server/repos/outcomes";
 import { Card, CardDescription } from "@/components/ui/card";
@@ -21,20 +22,18 @@ export default async function DecisionsPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Decisions</h1>
-        <p className="mt-1 text-sm text-muted">
-          Ask your twin to predict a choice. It runs five times and asks a stranger too — so you can see whether it really knows you.
-        </p>
-      </header>
+      <PageHeader
+        title="Decisions"
+        description="Ask your twin to predict a choice. It runs 5 times and asks a stranger too — so you can see whether it really knows you."
+      />
 
       <Checkins initial={checkins} />
 
       <PredictForm />
 
       <section className="space-y-3" aria-labelledby="open">
-        <h2 id="open" className="text-lg font-semibold">
-          Waiting for your real choice ({open.length})
+        <h2 id="open" className="font-display text-xl font-bold">
+          Waiting for your real choice <span className="tabular-nums text-muted">({open.length})</span>
         </h2>
         {open.length === 0 ? (
           <Card>

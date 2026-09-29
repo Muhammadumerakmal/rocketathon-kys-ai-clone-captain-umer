@@ -97,20 +97,19 @@ export function DuelBoard({ scenario, board, ready }: { scenario: DuelScenario; 
 
         {s.phase !== "revealed" ? (
           <>
-            <div role="radiogroup" aria-label="Your secret choice" className="grid gap-2">
+            <div role="group" aria-label="Your secret choice" className="grid gap-2">
               {s.scenario.options.map((o) => {
                 const picked = s.choice === o;
                 return (
                   <button
                     key={o}
                     type="button"
-                    role="radio"
-                    aria-checked={picked}
+                    aria-pressed={picked}
                     disabled={s.phase === "locked"}
                     onClick={() => dispatch({ type: "pick", choice: o })}
                     className={cn(
-                      "flex min-h-12 items-center justify-between rounded-[var(--r-md)] border px-4 text-left text-[15px] font-medium",
-                      picked ? "border-ink bg-ink text-paper" : "border-line hover:border-ink",
+                      "flex min-h-12 items-center justify-between gap-3 rounded-[var(--r-md)] border px-4 py-2 text-left text-[15px] font-medium transition-[border-color,background-color,color] duration-150",
+                      picked ? "border-ink bg-ink text-paper" : "border-line hover:border-ink hover:bg-surface-2",
                     )}
                   >
                     {o}
@@ -137,7 +136,9 @@ export function DuelBoard({ scenario, board, ready }: { scenario: DuelScenario; 
                 )}
               </>
             ) : (
-              <Button size="lg" variant="secondary" className="w-full" onClick={() => dispatch({ type: "skip" })} aria-label="Skip countdown">
+              <Button size="lg" variant="secondary" className="w-full" onClick={() => dispatch({ type: "skip" })}>
+                {/* the accessible name keeps the visible text (WCAG 2.5.3) and says what a press does */}
+                <span className="sr-only">Skip countdown:</span>
                 {isThinking(s) ? (
                   <span className="flex items-center gap-2">
                     Your twin is thinking <Dots />
@@ -172,11 +173,11 @@ export function DuelBoard({ scenario, board, ready }: { scenario: DuelScenario; 
                   row.tone === "stranger" && "bg-stranger-soft text-foreground",
                 )}
               >
-                <span>
+                <span className="min-w-0">
                   <span className={cn("flex items-center gap-1.5 text-xs font-semibold", row.tone === "twin" && "text-twin", row.tone === "stranger" && "text-stranger")}>
                     <row.icon className="size-3.5" aria-hidden /> {row.who}
                   </span>
-                  <span className="text-[15px] font-semibold">{row.choice}</span>
+                  <span className="block break-words text-[15px] font-semibold">{row.choice}</span>
                 </span>
                 {row.hit !== null && (
                   <Chip tone={row.hit ? "ok" : "bad"}>

@@ -48,7 +48,7 @@ export function DeleteEverything() {
           placeholder="DELETE"
         />
         <Button variant="danger" loading={state === "deleting"} disabled={typed !== "DELETE"} onClick={onDelete}>
-          Delete Everything
+          Delete everything
         </Button>
       </div>
       {state === "error" && (

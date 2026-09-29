@@ -1,6 +1,7 @@
 import { Download, Lock, ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PageHeader } from "@/components/shared/page-header";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { DeleteEverything } from "@/features/privacy/danger-zone";
@@ -20,10 +21,7 @@ export default async function PrivacyPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Privacy &amp; control</h1>
-        <p className="mt-1 text-sm text-muted">Your twin is yours. Here&apos;s everything you can see, take, and erase.</p>
-      </header>
+      <PageHeader title="Privacy & control" description="Your twin is yours. Here’s everything you can see, take, and erase." />
 
       <Card className="space-y-2">
         <CardTitle className="flex items-center gap-2">
@@ -42,7 +40,7 @@ export default async function PrivacyPage() {
         <CardDescription>
           {sealed} sealed {sealed === 1 ? "memory is" : "memories are"} stored for you only. They have no embedding and are never sent to any AI model.
         </CardDescription>
-        <Link href="/memories" className={buttonVariants({ size: "sm", variant: "secondary" })}>
+        <Link href="/memories" className={buttonVariants({ variant: "secondary" })}>
           Manage memories
         </Link>
       </Card>
@@ -52,7 +50,7 @@ export default async function PrivacyPage() {
           <Download className="size-4" aria-hidden /> Twin Passport
         </CardTitle>
         <CardDescription>Download every row TwinOS holds about you as JSON. AI-generated items are labelled as such.</CardDescription>
-        <a href="/api/export" className={buttonVariants({ size: "sm" })} download>
+        <a href="/api/export" className={buttonVariants()} download>
           Download my data
         </a>
       </Card>

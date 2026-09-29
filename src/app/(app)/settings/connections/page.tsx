@@ -1,5 +1,6 @@
 import { CalendarDays, ScrollText } from "lucide-react";
 import type { Metadata } from "next";
+import { PageHeader } from "@/components/shared/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { ConnectionToggle } from "@/features/connectors/connection-toggle";
@@ -11,7 +12,11 @@ import { mockState } from "@/lib/mock/store";
 
 export const metadata: Metadata = { title: "Connections" };
 
-const STATUS_TONE = { proposed: "warning", approved: "twin", executed: "success", rejected: "neutral", failed: "danger", expired: "neutral" } as const;
+// rose is reserved for the twin itself (colour rule), so "approved" is neutral here
+const STATUS_TONE = { proposed: "warning", approved: "neutral", executed: "success", rejected: "neutral", failed: "danger", expired: "neutral" } as const;
+
+// Rendered on the server, so say which zone it is instead of silently showing the server's.
+const auditTime = new Intl.DateTimeFormat("en", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: "UTC" });
 
 /** Connections, pending approvals and the append-only audit log (plan §19). */
 export default async function ConnectionsPage() {
@@ -27,10 +32,7 @@ export default async function ConnectionsPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Connections</h1>
-        <p className="mt-1 text-sm text-muted">Your twin can only propose actions. Every one needs your approval, and every step is logged.</p>
-      </header>
+      <PageHeader title="Connections" description="Your twin can only propose actions. Every one needs your approval, and every step is logged." />
 
       <Card className="space-y-3">
         <div className="flex items-center justify-between gap-2">
@@ -58,7 +60,7 @@ export default async function ConnectionsPage() {
           <ul className="space-y-2">
             {proposals.map((p) => (
               <li key={p.id} className="flex items-start justify-between gap-3 text-sm">
-                <span>{localizeSummary(p.summary)}</span>
+                <span className="min-w-0 break-words">{localizeSummary(p.summary)}</span>
                 <Badge tone={STATUS_TONE[p.status]}>{p.status}</Badge>
               </li>
             ))}
@@ -76,12 +78,14 @@ export default async function ConnectionsPage() {
         ) : (
           <ol className="space-y-1.5 text-xs">
             {audit.map((a) => (
-              <li key={a.id} className="flex gap-3">
-                <time className="shrink-0 tabular-nums text-muted" dateTime={a.created_at}>
-                  {new Date(a.created_at).toLocaleString()}
+              <li key={a.id} className="flex min-w-0 gap-3">
+                <time className="shrink-0 tabular-nums text-muted" dateTime={a.created_at} title={a.created_at}>
+                  {auditTime.format(new Date(a.created_at))} UTC
                 </time>
-                <code className="shrink-0">{a.event_type}</code>
-                <span className="truncate text-muted">{String((a.metadata as { summary?: string; detail?: string }).summary ?? (a.metadata as { detail?: string }).detail ?? "")}</span>
+                <code className="shrink-0" translate="no">
+                  {a.event_type}
+                </code>
+                <span className="min-w-0 truncate text-muted">{String((a.metadata as { summary?: string; detail?: string }).summary ?? (a.metadata as { detail?: string }).detail ?? "")}</span>
               </li>
             ))}
           </ol>
