@@ -39,6 +39,8 @@ export interface PredictInput {
   category: DecisionCategory;
   history: { n: number; hits: number };
   k?: number;
+  /** real progress for the UI (plan §6.4): each settled sample, then the stranger */
+  onProgress?: (e: { step: "sampling" | "baseline"; done?: number; total?: number }) => void;
 }
 
 /** Plan §11.3: k personalized samples ∥ one stranger sample → app-computed prediction. */
@@ -65,9 +67,16 @@ export async function predict(ctx: TwinContext, input: PredictInput): Promise<{ 
       modelSettings: { reasoning: { effort: "low" } },
     });
 
+    let settled = 0;
+    input.onProgress?.({ step: "sampling", done: 0, total: k });
+    const tick = <T,>(p: Promise<T>) =>
+      p.finally(() => input.onProgress?.({ step: "sampling", done: ++settled, total: k }));
     const [samples, baseline] = await Promise.all([
-      Promise.allSettled(Array.from({ length: k }, (_, i) => run(predictor(i), prompt, { maxTurns: 1, signal }))),
-      run(stranger, prompt, { maxTurns: 1, signal }),
+      Promise.allSettled(Array.from({ length: k }, (_, i) => tick(run(predictor(i), prompt, { maxTurns: 1, signal })))),
+      run(stranger, prompt, { maxTurns: 1, signal }).then((r) => {
+        input.onProgress?.({ step: "baseline" });
+        return r;
+      }),
     ]);
 
     let usage: Usage = addUsage({ inputTokens: 0, outputTokens: 0 }, baseline.state.usage);

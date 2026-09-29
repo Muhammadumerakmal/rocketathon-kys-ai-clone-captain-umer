@@ -36,6 +36,14 @@ interface MockState {
   proposals: MockProposal[];
   audit: MockAuditEntry[];
   calendarConnected: boolean;
+  threads: MockThread[];
+}
+
+export interface MockThread {
+  id: string;
+  title: string;
+  createdAt: string;
+  messages: { role: "user" | "twin"; text: string }[];
 }
 
 export interface MockProposal extends ActionProposal {
@@ -66,6 +74,7 @@ export function mockState(): MockState {
     proposals: [],
     audit: [],
     calendarConnected: false,
+    threads: [],
   };
   return g.__twinMock;
 }
