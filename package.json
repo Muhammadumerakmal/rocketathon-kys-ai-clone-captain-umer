@@ -17,7 +17,8 @@
     "check": "npm run typecheck && npm run lint && npm run test",
     "eval": "vitest run --config vitest.evals.config.mts",
     "eval:smoke": "vitest run --config vitest.evals.config.mts evals/smoke",
-    "db:types": "supabase gen types typescript --local > src/types/db.ts"
+    "db:types": "supabase gen types typescript --local > src/types/db.ts",
+    "db:setup-sql": "node scripts/build-setup-sql.mjs"
   },
   "dependencies": {
     "@openai/agents": "0.18.0",
@@ -35,6 +36,8 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "@electric-sql/pglite-pgvector": "^0.0.9",
     "@tailwindcss/postcss": "^4.3.3",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",

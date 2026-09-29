@@ -12,7 +12,8 @@ import type {
 
 /**
  * One valid response per contract, for the demo persona "Aria" (plan §16).
- * Every fixture is validated against its Zod contract in tests/unit/mock-fixtures.test.ts.
+ * Used ONLY when TWIN_MOCK=1 (and by tests); real mode never renders them.
+ * Every fixture is validated against its Zod contract in tests/unit/contracts.test.ts.
  */
 
 /** Deterministic, RFC-valid v4 uuids so fixtures are stable across runs. */

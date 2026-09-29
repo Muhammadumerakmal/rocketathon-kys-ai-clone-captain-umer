@@ -12,7 +12,7 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["tests/unit/**/*.test.{ts,tsx}", "src/**/*.test.{ts,tsx}"],
+    include: ["tests/unit/**/*.test.{ts,tsx}", "tests/db/**/*.test.ts", "src/**/*.test.{ts,tsx}"],
     setupFiles: ["tests/setup.ts"],
     env: { TWIN_MOCK: "1", OPENAI_AGENTS_DISABLE_TRACING: "1" },
   },

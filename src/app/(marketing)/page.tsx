@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { duelScoreboard } from "@/lib/mock/fixtures";
 
 const PROMISES = [
   { title: "It knows you, not people in general", body: "Every prediction is scored against a stranger baseline. You see the lift." },
@@ -26,10 +25,7 @@ export default function LandingPage() {
         <Link href="/dashboard" className={buttonVariants({ size: "lg" })}>
           Create my twin
         </Link>
-        <span className="text-sm text-muted">
-          Demo persona Aria: twin beats stranger by{" "}
-          <strong className="text-twin">+{duelScoreboard.liftPts} pts</strong>
-        </span>
+        <span className="text-sm text-muted">Your lift over a stranger is measured live, on your own decisions.</span>
       </div>
 
       <div className="mt-14 grid gap-4 sm:grid-cols-2">
