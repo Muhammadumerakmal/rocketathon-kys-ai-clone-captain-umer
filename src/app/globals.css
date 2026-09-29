@@ -19,6 +19,9 @@
   --success: oklch(0.62 0.15 150);
   --warning: oklch(0.75 0.15 75);
   --danger: oklch(0.6 0.2 25);
+  /* Chart series, validated with the dataviz palette checker (light surface): */
+  --chart-1: #555de3; /* twin / stated / claimed */
+  --chart-2: #00967a; /* revealed / actual */
   --radius: 0.75rem;
 }
 
@@ -34,6 +37,9 @@
     --primary-foreground: oklch(0.16 0.015 265);
     --twin: oklch(0.72 0.16 275);
     --stranger: oklch(0.6 0.03 265);
+    /* Own dark steps (not an automatic flip), validated against the dark surface. */
+    --chart-1: #6b74f0;
+    --chart-2: #00a88a;
   }
 }
 
@@ -52,6 +58,8 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-danger: var(--danger);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
   --radius-lg: var(--radius);
   --font-sans: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
   --font-mono: ui-monospace, "Cascadia Code", Menlo, monospace;
