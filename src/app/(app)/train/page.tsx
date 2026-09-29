@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Quiz } from "@/features/training/quiz";
+import { SwipeDeck } from "@/features/training/swipe-deck";
 import { requireViewer } from "@/lib/auth";
 import { mockAnswers } from "@/lib/mock/store";
 import { trainingProgress } from "@/lib/training/progress";
@@ -16,14 +16,12 @@ export default async function TrainPage() {
       : trainingProgress(...(await Promise.all([listQuestions(viewer.supabase), listAnswers(viewer.supabase)])));
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">Train your twin</h1>
-        <p className="mt-1 text-sm text-muted">
-          Quick gut answers work best. There are no right answers — only yours. Use keys 1–5.
-        </p>
+    <div className="space-y-5">
+      <header className="mx-auto max-w-md">
+        <h1 className="font-display text-[clamp(30px,8vw,44px)] font-bold leading-tight">Train your twin</h1>
+        <p className="mt-1 text-muted">Swipe, tap, or use ← → keys. Quick gut answers work best.</p>
       </header>
-      <Quiz initial={progress} />
+      <SwipeDeck initial={progress} />
     </div>
   );
 }

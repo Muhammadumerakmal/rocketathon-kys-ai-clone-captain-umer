@@ -18,6 +18,8 @@ export interface TrainingProgress {
   ceiling: number | null;
   /** next question to show, attempt 1 first, then retests (shuffled order) */
   next: { question: TrainingQuestion; attempt: 1 | 2 } | null;
+  /** every remaining card in order (the swipe deck renders the top three) */
+  queue: { question: TrainingQuestion; attempt: 1 | 2 }[];
 }
 
 /** Pure: everything the Train page and the dashboard need from answers. */
@@ -39,10 +41,13 @@ export function trainingProgress(questions: readonly TrainingQuestion[], answers
     return a && b ? [{ first: a, second: b }] : [];
   });
 
-  const nextFirst = questions.find((q) => !first.has(q.id));
-  // Retests come back in reverse order so they don't feel like an immediate repeat.
-  const nextRetest = [...retests].reverse().find((q) => first.has(q.id) && !second.has(q.id));
-  const next = nextFirst ? { question: nextFirst, attempt: 1 as const } : nextRetest ? { question: nextRetest, attempt: 2 as const } : null;
+  // All first attempts (in order) come before any retest, so a retest can never precede its
+  // own first answer. Retests run in reverse so they don't feel like an immediate repeat.
+  const queue = [
+    ...questions.filter((q) => !first.has(q.id)).map((question) => ({ question, attempt: 1 as const })),
+    ...[...retests].reverse().filter((q) => !second.has(q.id)).map((question) => ({ question, attempt: 2 as const })),
+  ];
+  const next = queue[0] ?? null;
 
   return {
     answered: first.size,
@@ -53,5 +58,6 @@ export function trainingProgress(questions: readonly TrainingQuestion[], answers
     readiness: readiness(traits),
     ceiling: consistencyCeiling(pairs),
     next,
+    queue,
   };
 }
